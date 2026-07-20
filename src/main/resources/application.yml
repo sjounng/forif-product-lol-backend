@@ -3,9 +3,9 @@ spring:
     name: lol-scrim
 
   datasource:
-    url: jdbc:mysql://localhost:3306/lol_scrim?serverTimezone=Asia/Seoul&characterEncoding=utf8mb4
-    username: ${DB_USERNAME:scrim}
-    password: ${DB_PASSWORD:scrim}
+    url: jdbc:mysql://localhost:3306/${DB_NAME:scrim}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -24,3 +24,10 @@ spring:
 
 server:
   port: 8080
+
+app:
+  jwt:
+    # 운영에서는 반드시 환경변수로 주입 (32바이트 이상)
+    secret: ${JWT_SECRET:dev-only-secret-key-change-me-0123456789abcdef}
+    access-token-ttl-seconds: 1800        # 30분
+  refresh-token-ttl-days: 14
