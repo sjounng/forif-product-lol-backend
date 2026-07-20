@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: lol-scrim
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/lol_scrim?serverTimezone=Asia/Seoul&characterEncoding=utf8mb4
+    username: ${DB_USERNAME:scrim}
+    password: ${DB_PASSWORD:scrim}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+server:
+  port: 8080
