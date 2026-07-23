@@ -30,7 +30,9 @@ public class WebConfig implements WebMvcConfigurer {
 						"/api/auth/signup",
 						"/api/auth/login",
 						"/api/auth/refresh",
-						"/api/auth/logout");
+						"/api/auth/logout",
+						"/api/auth/password-reset/request",
+						"/api/auth/password-reset/confirm");
 	}
 
 	@Override

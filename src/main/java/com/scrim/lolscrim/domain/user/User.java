@@ -64,4 +64,8 @@ public class User {
 	public void markLoggedIn(LocalDateTime at) {
 		this.lastLoginAt = at;
 	}
+
+	public void changePassword(String newPasswordHash) {
+		this.passwordHash = newPasswordHash;
+	}
 }

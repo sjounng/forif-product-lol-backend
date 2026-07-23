@@ -31,3 +31,4 @@ app:
     secret: ${JWT_SECRET:dev-only-secret-key-change-me-0123456789abcdef}
     access-token-ttl-seconds: 1800        # 30분
   refresh-token-ttl-days: 14
+  password-reset-token-ttl-minutes: 15
