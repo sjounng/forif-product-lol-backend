@@ -32,3 +32,8 @@ app:
     access-token-ttl-seconds: 1800        # 30분
   refresh-token-ttl-days: 14
   password-reset-token-ttl-minutes: 15
+  password-reset-rate-limit:
+    email-limit: 3
+    email-window-seconds: 300
+    ip-limit: 20
+    ip-window-seconds: 3600

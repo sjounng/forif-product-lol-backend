@@ -42,7 +42,6 @@ public class PasswordResetService {
 	public void requestReset(PasswordResetRequest request) {
 		userRepository.findByEmail(request.email())
 				.filter(user -> user.getStatus() == UserStatus.ACTIVE)
-				.filter(user -> user.getDisplayName().equals(request.displayName()))
 				.ifPresent(user -> issueResetToken(user, request.email()));
 	}
 

@@ -67,10 +67,9 @@ class PasswordResetServiceTest {
 
 	@Test
 	void issuesResetTokenForMatchingActiveUser() {
-		PasswordResetRequest request = new PasswordResetRequest("user@example.com", "홍길동");
+		PasswordResetRequest request = new PasswordResetRequest("user@example.com");
 		when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
 		when(user.getStatus()).thenReturn(UserStatus.ACTIVE);
-		when(user.getDisplayName()).thenReturn("홍길동");
 		when(user.getId()).thenReturn(1L);
 
 		passwordResetService.requestReset(request);
@@ -84,11 +83,9 @@ class PasswordResetServiceTest {
 	}
 
 	@Test
-	void doesNotRevealOrIssueTokenWhenAccountInformationDoesNotMatch() {
-		PasswordResetRequest request = new PasswordResetRequest("user@example.com", "다른이름");
-		when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
-		when(user.getStatus()).thenReturn(UserStatus.ACTIVE);
-		when(user.getDisplayName()).thenReturn("홍길동");
+	void doesNotRevealOrIssueTokenWhenAccountDoesNotExist() {
+		PasswordResetRequest request = new PasswordResetRequest("missing@example.com");
+		when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
 
 		passwordResetService.requestReset(request);
 

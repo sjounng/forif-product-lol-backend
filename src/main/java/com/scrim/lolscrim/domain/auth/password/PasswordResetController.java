@@ -19,10 +19,14 @@ import lombok.RequiredArgsConstructor;
 public class PasswordResetController {
 
 	private final PasswordResetService passwordResetService;
+	private final PasswordResetRateLimiter passwordResetRateLimiter;
 
 	@PostMapping("/request")
 	@ResponseStatus(HttpStatus.ACCEPTED)
-	public void requestReset(@Valid @RequestBody PasswordResetRequest request) {
+	public void requestReset(
+			@Valid @RequestBody PasswordResetRequest request,
+			jakarta.servlet.http.HttpServletRequest httpRequest) {
+		passwordResetRateLimiter.check(request.email(), httpRequest.getRemoteAddr());
 		passwordResetService.requestReset(request);
 	}
 
