@@ -69,4 +69,8 @@ public class User {
 		this.displayName = displayName;
 		this.avatarUrl = avatarUrl;
 	}
+
+	public void changePassword(String newPasswordHash) {
+		this.passwordHash = newPasswordHash;
+	}
 }
