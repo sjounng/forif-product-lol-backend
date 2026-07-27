@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.scrim.lolscrim.domain.auth.dto.UserResponse;
 import com.scrim.lolscrim.domain.user.dto.ChangePasswordRequest;
-import com.scrim.lolscrim.domain.user.dto.UpdateProfileRequest;
 import com.scrim.lolscrim.global.auth.AuthUserId;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import tools.jackson.databind.JsonNode;
 
 @RestController
 @RequestMapping("/api/users")
@@ -23,7 +23,7 @@ public class UserController {
 	private final UserService userService;
 
 	@PatchMapping("/me")
-	public UserResponse updateMe(@AuthUserId Long userId, @Valid @RequestBody UpdateProfileRequest request) {
+	public UserResponse updateMe(@AuthUserId Long userId, @RequestBody JsonNode request) {
 		return userService.updateProfile(userId, request);
 	}
 
