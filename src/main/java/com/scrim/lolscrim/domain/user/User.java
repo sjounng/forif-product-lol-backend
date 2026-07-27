@@ -64,4 +64,9 @@ public class User {
 	public void markLoggedIn(LocalDateTime at) {
 		this.lastLoginAt = at;
 	}
+
+	public void updateProfile(String displayName, String avatarUrl) {
+		this.displayName = displayName;
+		this.avatarUrl = avatarUrl;
+	}
 }
