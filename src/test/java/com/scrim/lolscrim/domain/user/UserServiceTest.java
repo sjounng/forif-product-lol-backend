@@ -1,6 +1,7 @@
 package com.scrim.lolscrim.domain.user;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,6 +19,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.scrim.lolscrim.domain.auth.UserSessionRepository;
 import com.scrim.lolscrim.domain.user.dto.ChangePasswordRequest;
 import com.scrim.lolscrim.global.error.ApiException;
+
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -41,7 +45,7 @@ class UserServiceTest {
 		userService = new UserService(userRepository, userSessionRepository, passwordEncoder);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 		when(user.getStatus()).thenReturn(UserStatus.ACTIVE);
-		when(user.getPasswordHash()).thenReturn("old-hash");
+		lenient().when(user.getPasswordHash()).thenReturn("old-hash");
 	}
 
 	@Test
@@ -84,5 +88,59 @@ class UserServiceTest {
 				.hasMessage("새 비밀번호는 현재 비밀번호와 달라야 합니다.");
 
 		verify(user, never()).changePassword(org.mockito.ArgumentMatchers.anyString());
+	}
+
+	@Test
+	void updatesOnlyDisplayNameWhenAvatarUrlAbsent() {
+		when(user.getDisplayName()).thenReturn("기존이름");
+		when(user.getAvatarUrl()).thenReturn("https://old.example.com/a.png");
+
+		userService.updateProfile(1L, json("{\"displayName\":\"새이름\"}"));
+
+		verify(user).updateProfile("새이름", "https://old.example.com/a.png");
+	}
+
+	@Test
+	void clearsAvatarUrlWhenExplicitNull() {
+		when(user.getDisplayName()).thenReturn("기존이름");
+
+		userService.updateProfile(1L, json("{\"avatarUrl\":null}"));
+
+		verify(user).updateProfile("기존이름", null);
+	}
+
+	@Test
+	void rejectsBlankDisplayName() {
+		assertThatThrownBy(() -> userService.updateProfile(1L, json("{\"displayName\":\"\"}")))
+				.isInstanceOf(ApiException.class)
+				.hasMessage("displayName: 공백일 수 없습니다.");
+
+		verify(user, never()).updateProfile(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any());
+	}
+
+	@Test
+	void rejectsNonHttpAvatarUrl() {
+		when(user.getDisplayName()).thenReturn("기존이름");
+
+		assertThatThrownBy(() -> userService.updateProfile(1L, json("{\"avatarUrl\":\"not-a-url\"}")))
+				.isInstanceOf(ApiException.class)
+				.hasMessage("avatarUrl: 올바른 http(s) URL 형식이 아닙니다.");
+	}
+
+	@Test
+	void rejectsProfileUpdateForInactiveAccount() {
+		when(user.getStatus()).thenReturn(UserStatus.SUSPENDED);
+
+		assertThatThrownBy(() -> userService.updateProfile(1L, json("{\"displayName\":\"새이름\"}")))
+				.isInstanceOf(ApiException.class)
+				.hasMessage("이용할 수 없는 계정입니다.");
+	}
+
+	private static JsonNode json(String json) {
+		try {
+			return new ObjectMapper().readTree(json);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

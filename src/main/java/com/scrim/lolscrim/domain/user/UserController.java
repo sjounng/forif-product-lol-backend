@@ -7,11 +7,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.scrim.lolscrim.domain.auth.dto.UserResponse;
 import com.scrim.lolscrim.domain.user.dto.ChangePasswordRequest;
 import com.scrim.lolscrim.global.auth.AuthUserId;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import tools.jackson.databind.JsonNode;
 
 @RestController
 @RequestMapping("/api/users")
@@ -19,6 +21,11 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
 	private final UserService userService;
+
+	@PatchMapping("/me")
+	public UserResponse updateMe(@AuthUserId Long userId, @RequestBody JsonNode request) {
+		return userService.updateProfile(userId, request);
+	}
 
 	@PatchMapping("/me/password")
 	@ResponseStatus(HttpStatus.NO_CONTENT)

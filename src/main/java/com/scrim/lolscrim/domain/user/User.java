@@ -65,6 +65,11 @@ public class User {
 		this.lastLoginAt = at;
 	}
 
+	public void updateProfile(String displayName, String avatarUrl) {
+		this.displayName = displayName;
+		this.avatarUrl = avatarUrl;
+	}
+
 	public void changePassword(String newPasswordHash) {
 		this.passwordHash = newPasswordHash;
 	}
