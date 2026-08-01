@@ -37,3 +37,16 @@ app:
     email-window-seconds: 300
     ip-limit: 20
     ip-window-seconds: 3600
+  data-dragon:
+    base-url: https://ddragon.leagueoflegends.com
+    korean-locale: ko_KR
+    english-locale: en_US
+    sync-on-startup: true
+    connect-timeout-millis: 5000
+    read-timeout-millis: 10000
+  riot-api:
+    api-key: ${RIOT_API_KEY:}
+    account-base-url: https://asia.api.riotgames.com
+    platform-base-url: https://kr.api.riotgames.com
+    connect-timeout-millis: 5000
+    read-timeout-millis: 10000
