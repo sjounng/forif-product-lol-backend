@@ -37,3 +37,8 @@ app:
     email-window-seconds: 300
     ip-limit: 20
     ip-window-seconds: 3600
+  riot:
+    # 절대 커밋하지 말 것 — 환경변수 RIOT_API_KEY 로만 주입
+    api-key: ${RIOT_API_KEY:}
+    account-region: asia   # Account-v1 은 지역 라우팅(americas/asia/europe)
+    platform: KR            # Summoner-v4/League-v4 는 플랫폼 라우팅. RiotPlatform enum과 대소문자 맞춤
