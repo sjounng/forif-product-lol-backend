@@ -27,9 +27,8 @@ server:
 
 app:
   jwt:
-    # 운영에서는 반드시 환경변수로 주입 (32바이트 이상)
     secret: ${JWT_SECRET:dev-only-secret-key-change-me-0123456789abcdef}
-    access-token-ttl-seconds: 1800        # 30분
+    access-token-ttl-seconds: 1800
   refresh-token-ttl-days: 14
   password-reset-token-ttl-minutes: 15
   password-reset-rate-limit:
@@ -37,11 +36,15 @@ app:
     email-window-seconds: 300
     ip-limit: 20
     ip-window-seconds: 3600
+  data-dragon:
+    base-url: https://ddragon.leagueoflegends.com
+    korean-locale: ko_KR
+    english-locale: en_US
+    sync-on-startup: true
+    connect-timeout-millis: 5000
+    read-timeout-millis: 10000
   riot:
-    # 절대 커밋하지 말 것 — 환경변수 RIOT_API_KEY 로만 주입
     api-key: ${RIOT_API_KEY:}
-    account-region: asia   # Account-v1/Match-v5 는 지역 라우팅(americas/asia/europe)
-    platform: KR            # Summoner-v4/League-v4 는 플랫폼 라우팅. RiotPlatform enum과 대소문자 맞춤
-    # 라인 분포 분석에 쓸 최근 솔랭 판수. 1판당 상세 조회 1회라 그대로 호출 수가 된다(+1).
-    # 개발 키(100req/2min)에서는 20 정도가 상한선 — 더 올리면 연속 등록 시 429가 잦아진다.
+    account-region: asia
+    platform: KR
     lane-analysis-match-count: 20

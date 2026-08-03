@@ -14,4 +14,16 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
 	int countByRoomIdAndActiveTrue(Long roomId);
 
 	boolean existsByRoomIdAndRiotAccountId(Long roomId, Long riotAccountId);
+
+	Optional<Player> findByRoomIdAndMemberUserId(Long roomId, Long memberUserId);
+
+	Optional<Player> findByRoomIdAndGuestSessionId(Long roomId, Long guestSessionId);
+
+	Optional<Player> findByRoomIdAndRiotAccountId(Long roomId, Long riotAccountId);
+
+	List<Player> findAllByRoomIdAndRiotAccountIdIsNotNullAndActiveTrueOrderByCreatedAtAsc(Long roomId);
+
+	List<Player> findAllByRoomIdAndMemberUserIdAndActiveTrue(Long roomId, Long memberUserId);
+
+	long countByRoomIdAndRiotAccountIdIsNotNullAndMemberUserIdIsNullAndGuestSessionIdIsNullAndActiveTrue(Long roomId);
 }

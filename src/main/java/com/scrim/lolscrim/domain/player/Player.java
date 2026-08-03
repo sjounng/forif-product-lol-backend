@@ -2,6 +2,8 @@ package com.scrim.lolscrim.domain.player;
 
 import java.time.LocalDateTime;
 
+import com.scrim.lolscrim.domain.session.ParticipantType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -28,6 +30,12 @@ public class Player {
 	@Column(name = "riot_account_id")
 	private Long riotAccountId;
 
+	@Column(name = "member_user_id")
+	private Long memberUserId;
+
+	@Column(name = "guest_session_id")
+	private Long guestSessionId;
+
 	@Column(name = "display_name", nullable = false, length = 50)
 	private String displayName;
 
@@ -47,16 +55,81 @@ public class Player {
 	private LocalDateTime updatedAt;
 
 	public static Player create(Long roomId, Long riotAccountId, String displayName, Long addedByUserId) {
-		Player player = new Player();
-		player.roomId = roomId;
-		player.riotAccountId = riotAccountId;
-		player.displayName = displayName;
-		player.addedByUserId = addedByUserId;
-		player.active = true;
+		return fromRiotAccount(roomId, riotAccountId, displayName, addedByUserId, LocalDateTime.now());
+	}
+
+	public static Player fromMember(Long roomId, Long userId, String displayName, Long addedBy, LocalDateTime now) {
+		Player player = base(roomId, displayName, addedBy, now);
+		player.memberUserId = userId;
 		return player;
 	}
 
+	public static Player fromGuest(Long roomId, Long guestId, String displayName, Long addedBy, LocalDateTime now) {
+		Player player = base(roomId, displayName, addedBy, now);
+		player.guestSessionId = guestId;
+		return player;
+	}
+
+	public static Player fromRiotAccount(
+			Long roomId, Long riotAccountId, String displayName, Long addedBy, LocalDateTime now) {
+		Player player = base(roomId, displayName, addedBy, now);
+		player.riotAccountId = riotAccountId;
+		return player;
+	}
+
+	private static Player base(Long roomId, String displayName, Long addedBy, LocalDateTime now) {
+		Player player = new Player();
+		player.roomId = roomId;
+		player.displayName = displayName;
+		player.active = true;
+		player.addedByUserId = addedBy;
+		player.createdAt = now;
+		player.updatedAt = now;
+		return player;
+	}
+
+	public void refreshDisplayName(String displayName, LocalDateTime now) {
+		this.displayName = displayName;
+		this.active = true;
+		this.updatedAt = now;
+	}
+
+	public void attachMember(Long memberUserId, String displayName, LocalDateTime now) {
+		this.memberUserId = memberUserId;
+		refreshDisplayName(displayName, now);
+	}
+
+	public void attachRiotAccount(Long riotAccountId, LocalDateTime now) {
+		this.riotAccountId = riotAccountId;
+		this.active = true;
+		this.updatedAt = now;
+	}
+
+	public void detachRiotAccount(LocalDateTime now) {
+		this.riotAccountId = null;
+		this.updatedAt = now;
+	}
+
 	public void deactivate() {
+		deactivate(LocalDateTime.now());
+	}
+
+	public void deactivate(LocalDateTime now) {
 		this.active = false;
+		this.updatedAt = now;
+	}
+
+	public ParticipantType getParticipantType() {
+		if (memberUserId != null) {
+			return ParticipantType.MEMBER;
+		}
+		return guestSessionId != null ? ParticipantType.GUEST : ParticipantType.PLAYER;
+	}
+
+	public Long getSourceId() {
+		if (memberUserId != null) {
+			return memberUserId;
+		}
+		return guestSessionId != null ? guestSessionId : id;
 	}
 }
