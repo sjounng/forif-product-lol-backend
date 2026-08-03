@@ -22,20 +22,26 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.scrim.lolscrim.domain.group.GroupRole;
 import com.scrim.lolscrim.domain.group.RoomMembership;
 import com.scrim.lolscrim.domain.group.RoomMembershipRepository;
-import com.scrim.lolscrim.domain.group.RoomRepository;
+import com.scrim.lolscrim.domain.room.RoomRepository;
 import com.scrim.lolscrim.domain.player.RiotProfileSyncService.SyncedRiotProfile;
 import com.scrim.lolscrim.domain.player.dto.AddRiotPlayerRequest;
 import com.scrim.lolscrim.domain.player.dto.RiotPlayerResponse;
-import com.scrim.lolscrim.domain.session.Player;
-import com.scrim.lolscrim.domain.session.PlayerRepository;
+import com.scrim.lolscrim.domain.player.Player;
+import com.scrim.lolscrim.domain.player.PlayerRepository;
+import com.scrim.lolscrim.domain.riot.QueueType;
+import com.scrim.lolscrim.domain.riot.RankDivision;
+import com.scrim.lolscrim.domain.riot.RiotAccount;
+import com.scrim.lolscrim.domain.riot.RiotAccountRepository;
+import com.scrim.lolscrim.domain.riot.RiotPlatform;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshot;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshotRepository;
+import com.scrim.lolscrim.domain.riot.Tier;
 import com.scrim.lolscrim.global.error.ApiException;
 import com.scrim.lolscrim.global.error.ErrorCode;
 
 @ExtendWith(MockitoExtension.class)
 class RiotPlayerServiceTest {
 
-	@Mock
-	private RiotApiClient riotApiClient;
 	@Mock
 	private RiotProfileSyncService profileSyncService;
 	@Mock
@@ -44,6 +50,8 @@ class RiotPlayerServiceTest {
 	private PlayerRepository playerRepository;
 	@Mock
 	private PlayerRatingRepository ratingRepository;
+	@Mock
+	private PlayerLaneRatingRepository laneRatingRepository;
 	@Mock
 	private RiotRankSnapshotRepository rankRepository;
 	@Mock
@@ -65,6 +73,7 @@ class RiotPlayerServiceTest {
 				riotAccountRepository,
 				playerRepository,
 				ratingRepository,
+				laneRatingRepository,
 				rankRepository,
 				roomRepository,
 				membershipRepository,
@@ -77,10 +86,12 @@ class RiotPlayerServiceTest {
 		when(membershipRepository.findByRoomIdAndUserIdAndActiveTrue(7L, 1L))
 				.thenReturn(Optional.of(membership));
 		when(membership.getRole()).thenReturn(GroupRole.GROUP_MANAGER);
-		RiotAccount account = RiotAccount.create("puuid-1", "Hide on bush", "KR1", java.time.LocalDateTime.of(2026, 8, 1, 0, 0));
+		RiotAccount account = RiotAccount.create("puuid-1", RiotPlatform.KR, "Hide on bush", "KR1");
 		ReflectionTestUtils.setField(account, "id", 11L);
-		RiotRankSnapshot rank = RiotRankSnapshot.create(11L, "DIAMOND", "II", 42, 10, 5, java.time.LocalDateTime.of(2026, 8, 1, 0, 0));
-		when(profileSyncService.sync("Hide on bush", "KR1")).thenReturn(new SyncedRiotProfile(account, rank));
+		RiotRankSnapshot rank = RiotRankSnapshot.create(
+				11L, QueueType.RANKED_SOLO_5x5, Tier.DIAMOND, RankDivision.II, 42, 10, 5, 2642);
+		when(profileSyncService.sync("Hide on bush", "KR1")).thenReturn(new SyncedRiotProfile(
+				account, rank, java.util.Map.of(Lane.MID, 5, Lane.TOP, 3)));
 		when(playerRepository.findByRoomIdAndRiotAccountId(7L, 11L))
 				.thenReturn(Optional.empty());
 		when(playerRepository.save(org.mockito.ArgumentMatchers.any(Player.class)))
@@ -92,6 +103,8 @@ class RiotPlayerServiceTest {
 		when(ratingRepository.findById(21L)).thenReturn(Optional.empty());
 		when(ratingRepository.save(org.mockito.ArgumentMatchers.any(PlayerRating.class)))
 				.thenAnswer(invocation -> invocation.getArgument(0));
+		when(laneRatingRepository.saveAll(org.mockito.ArgumentMatchers.<PlayerLaneRating>anyList()))
+				.thenAnswer(invocation -> invocation.getArgument(0));
 
 		RiotPlayerResponse response = service.addPlayer(
 				1L,
@@ -102,7 +115,7 @@ class RiotPlayerServiceTest {
 		assertThat(response.displayName()).isEqualTo("Hide on bush");
 		assertThat(response.riotAccount().gameName()).isEqualTo("Hide on bush");
 		assertThat(response.riotAccount().tagLine()).isEqualTo("KR1");
-		assertThat(response.rating()).isEqualTo(1500);
+		assertThat(response.rating()).isEqualTo(2742);
 		assertThat(response.isActive()).isTrue();
 	}
 
@@ -128,15 +141,13 @@ class RiotPlayerServiceTest {
 		when(membershipRepository.findByRoomIdAndUserIdAndActiveTrue(7L, 1L))
 				.thenReturn(Optional.of(membership));
 		when(membership.getRole()).thenReturn(GroupRole.GROUP_OWNER);
-		RiotAccount account = RiotAccount.create(
-				"puuid-1",
-				"Player One",
-				"KR1",
-				java.time.LocalDateTime.of(2026, 8, 1, 0, 0));
+		RiotAccount account = RiotAccount.create("puuid-1", RiotPlatform.KR, "Player One", "KR1");
 		ReflectionTestUtils.setField(account, "id", 11L);
 		when(profileSyncService.sync("Player One", "KR1")).thenReturn(new SyncedRiotProfile(
 				account,
-				RiotRankSnapshot.create(11L, "UNRANKED", null, 0, 0, 0, java.time.LocalDateTime.of(2026, 8, 1, 0, 0))));
+				RiotRankSnapshot.create(
+						11L, QueueType.RANKED_SOLO_5x5, Tier.UNRANKED, null, 0, 0, 0, 0),
+				java.util.Map.of()));
 		Player player = Player.fromRiotAccount(
 				7L,
 				11L,

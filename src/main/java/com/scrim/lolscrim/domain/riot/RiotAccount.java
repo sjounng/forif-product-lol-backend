@@ -1,6 +1,8 @@
-package com.scrim.lolscrim.domain.player;
+package com.scrim.lolscrim.domain.riot;
 
 import java.time.LocalDateTime;
+
+import com.scrim.lolscrim.domain.player.Lane;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,7 +12,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import com.scrim.lolscrim.domain.session.Lane;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,11 +26,11 @@ public class RiotAccount {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false, unique = true, length = 78)
+	@Column(name = "puuid", nullable = false, length = 78)
 	private String puuid;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
+	@Column(name = "platform", nullable = false)
 	private RiotPlatform platform;
 
 	@Column(name = "game_name", nullable = false, length = 32)
@@ -62,47 +63,37 @@ public class RiotAccount {
 	@Column(name = "sync_status", nullable = false)
 	private RiotSyncStatus syncStatus;
 
-	@Column(name = "created_at", nullable = false)
+	@Column(name = "created_at", insertable = false, updatable = false)
 	private LocalDateTime createdAt;
 
-	@Column(name = "updated_at", nullable = false)
+	@Column(name = "updated_at", insertable = false, updatable = false)
 	private LocalDateTime updatedAt;
 
-	public static RiotAccount create(
-			String puuid,
-			String gameName,
-			String tagLine,
-			LocalDateTime now) {
+	public static RiotAccount create(String puuid, RiotPlatform platform, String gameName, String tagLine) {
 		RiotAccount account = new RiotAccount();
 		account.puuid = puuid;
-		account.platform = RiotPlatform.KR;
-		account.refresh(gameName, tagLine, now);
-		account.createdAt = now;
+		account.platform = platform;
+		account.gameName = gameName;
+		account.tagLine = tagLine;
+		account.syncStatus = RiotSyncStatus.OK;
 		return account;
 	}
 
-	public void refresh(String gameName, String tagLine, LocalDateTime now) {
-		this.gameName = gameName;
-		this.tagLine = tagLine;
-		this.lastSyncedAt = now;
-		this.syncStatus = RiotSyncStatus.OK;
-		this.updatedAt = now;
-	}
-
-	public void refreshProfile(
-			String gameName,
-			String tagLine,
-			String summonerId,
-			Integer profileIconId,
-			Integer summonerLevel,
-			Lane primaryLane,
-			Lane secondaryLane,
-			LocalDateTime now) {
-		refresh(gameName, tagLine, now);
-		this.summonerId = summonerId;
+	/** Riot 이 summoner-v4 에서 summonerId 를 더 이상 안 줘서 summonerId 필드는 항상 null로 남는다. */
+	public void applySummoner(Integer profileIconId, Integer summonerLevel, LocalDateTime now) {
 		this.profileIconId = profileIconId;
 		this.summonerLevel = summonerLevel;
+		this.syncStatus = RiotSyncStatus.OK;
+		this.lastSyncedAt = now;
+	}
+
+	public void applyLanePreferences(Lane primaryLane, Lane secondaryLane) {
 		this.primaryLane = primaryLane;
 		this.secondaryLane = secondaryLane;
+	}
+
+	public void markSyncFailed(RiotSyncStatus status, LocalDateTime now) {
+		this.syncStatus = status;
+		this.lastSyncedAt = now;
 	}
 }

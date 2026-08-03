@@ -1,4 +1,4 @@
-package com.scrim.lolscrim.domain.group;
+package com.scrim.lolscrim.domain.room;
 
 import java.time.LocalDateTime;
 
@@ -54,15 +54,29 @@ public class Room {
 	@Column(name = "guest_admission_enabled", nullable = false)
 	private boolean guestAdmissionEnabled;
 
+	@Column(name = "team_size", nullable = false)
+	private byte teamSize;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
 	private RoomStatus status;
 
-	@Column(name = "created_at", nullable = false)
+	@Column(name = "created_at", insertable = false, updatable = false)
 	private LocalDateTime createdAt;
 
-	@Column(name = "updated_at", nullable = false)
+	@Column(name = "updated_at", insertable = false, updatable = false)
 	private LocalDateTime updatedAt;
+
+	public static Room create(
+			Long ownerUserId,
+			String name,
+			String description,
+			String publicCode,
+			String entryCodeHash,
+			String entryCodeHint) {
+		return create(ownerUserId, name, description, publicCode, entryCodeHash, entryCodeHint, true,
+				LocalDateTime.now());
+	}
 
 	public static Room create(
 			Long ownerUserId,
@@ -80,8 +94,10 @@ public class Room {
 		room.publicCode = publicCode;
 		room.entryCodeHash = entryCodeHash;
 		room.entryCodeHint = entryCodeHint;
+		room.entryCodeRotatedAt = now;
 		room.guestCanDraft = false;
 		room.guestAdmissionEnabled = guestAdmissionEnabled;
+		room.teamSize = 5;
 		room.status = RoomStatus.ACTIVE;
 		room.createdAt = now;
 		room.updatedAt = now;

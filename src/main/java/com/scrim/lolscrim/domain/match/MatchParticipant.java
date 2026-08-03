@@ -2,7 +2,7 @@ package com.scrim.lolscrim.domain.match;
 
 import java.math.BigDecimal;
 
-import com.scrim.lolscrim.domain.session.Lane;
+import com.scrim.lolscrim.domain.player.Lane;
 import com.scrim.lolscrim.domain.session.SessionTeamMember;
 import com.scrim.lolscrim.domain.session.TeamSide;
 

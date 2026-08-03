@@ -1,5 +1,9 @@
 package com.scrim.lolscrim.domain.group;
 
+import com.scrim.lolscrim.domain.room.Room;
+import com.scrim.lolscrim.domain.room.RoomRepository;
+import com.scrim.lolscrim.domain.room.RoomStatus;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +26,7 @@ import com.scrim.lolscrim.global.error.ApiException;
 import com.scrim.lolscrim.global.error.ErrorCode;
 
 import lombok.RequiredArgsConstructor;
-import com.scrim.lolscrim.domain.session.PlayerRepository;
+import com.scrim.lolscrim.domain.player.PlayerRepository;
 
 @Service
 @RequiredArgsConstructor

@@ -15,18 +15,19 @@ import com.scrim.lolscrim.domain.auth.dto.UserResponse;
 import com.scrim.lolscrim.domain.user.dto.ChangePasswordRequest;
 import com.scrim.lolscrim.domain.user.dto.UserSearchResponse;
 import com.scrim.lolscrim.domain.user.dto.UserProfileResponse;
-import com.scrim.lolscrim.domain.player.RiotAccount;
-import com.scrim.lolscrim.domain.player.RiotAccountRepository;
+import com.scrim.lolscrim.domain.riot.RiotAccount;
+import com.scrim.lolscrim.domain.riot.RiotAccountRepository;
 import com.scrim.lolscrim.domain.player.RiotProfileSyncService;
-import com.scrim.lolscrim.domain.player.RiotRankSnapshot;
-import com.scrim.lolscrim.domain.player.RiotRankSnapshotRepository;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshot;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshotRepository;
+import com.scrim.lolscrim.domain.riot.QueueType;
 import com.scrim.lolscrim.domain.player.dto.AddRiotPlayerRequest;
 import com.scrim.lolscrim.domain.player.dto.RiotAccountResponse;
 import com.scrim.lolscrim.domain.player.RiotProfileSyncService.SyncedRiotProfile;
 import com.scrim.lolscrim.domain.group.RoomMembership;
 import com.scrim.lolscrim.domain.group.RoomMembershipRepository;
-import com.scrim.lolscrim.domain.session.Player;
-import com.scrim.lolscrim.domain.session.PlayerRepository;
+import com.scrim.lolscrim.domain.player.Player;
+import com.scrim.lolscrim.domain.player.PlayerRepository;
 import com.scrim.lolscrim.global.error.ApiException;
 
 import lombok.RequiredArgsConstructor;
@@ -128,7 +129,7 @@ public class UserService {
 			return new UserProfileResponse(UserResponse.from(user), null, null, null);
 		}
 		RiotRankSnapshot rank = riotRankRepository
-				.findFirstByRiotAccountIdAndQueueTypeOrderByCapturedAtDesc(account.getId(), "RANKED_SOLO_5x5")
+				.findFirstByRiotAccountIdAndQueueTypeOrderByCapturedAtDesc(account.getId(), QueueType.RANKED_SOLO_5x5)
 				.orElse(null);
 		return new UserProfileResponse(
 				UserResponse.from(user),

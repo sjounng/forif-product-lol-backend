@@ -1,5 +1,8 @@
 package com.scrim.lolscrim.domain.group;
 
+import com.scrim.lolscrim.domain.room.Room;
+import com.scrim.lolscrim.domain.room.RoomRepository;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;

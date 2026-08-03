@@ -1,6 +1,8 @@
-package com.scrim.lolscrim.domain.session;
+package com.scrim.lolscrim.domain.player;
 
 import java.time.LocalDateTime;
+
+import com.scrim.lolscrim.domain.session.ParticipantType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -37,17 +39,24 @@ public class Player {
 	@Column(name = "display_name", nullable = false, length = 50)
 	private String displayName;
 
+	@Column(name = "memo", length = 255)
+	private String memo;
+
 	@Column(name = "is_active", nullable = false)
 	private boolean active;
 
 	@Column(name = "added_by_user_id")
 	private Long addedByUserId;
 
-	@Column(name = "created_at", nullable = false)
+	@Column(name = "created_at", insertable = false, updatable = false)
 	private LocalDateTime createdAt;
 
-	@Column(name = "updated_at", nullable = false)
+	@Column(name = "updated_at", insertable = false, updatable = false)
 	private LocalDateTime updatedAt;
+
+	public static Player create(Long roomId, Long riotAccountId, String displayName, Long addedByUserId) {
+		return fromRiotAccount(roomId, riotAccountId, displayName, addedByUserId, LocalDateTime.now());
+	}
 
 	public static Player fromMember(Long roomId, Long userId, String displayName, Long addedBy, LocalDateTime now) {
 		Player player = base(roomId, displayName, addedBy, now);
@@ -62,11 +71,7 @@ public class Player {
 	}
 
 	public static Player fromRiotAccount(
-			Long roomId,
-			Long riotAccountId,
-			String displayName,
-			Long addedBy,
-			LocalDateTime now) {
+			Long roomId, Long riotAccountId, String displayName, Long addedBy, LocalDateTime now) {
 		Player player = base(roomId, displayName, addedBy, now);
 		player.riotAccountId = riotAccountId;
 		return player;
@@ -103,6 +108,10 @@ public class Player {
 	public void detachRiotAccount(LocalDateTime now) {
 		this.riotAccountId = null;
 		this.updatedAt = now;
+	}
+
+	public void deactivate() {
+		deactivate(LocalDateTime.now());
 	}
 
 	public void deactivate(LocalDateTime now) {

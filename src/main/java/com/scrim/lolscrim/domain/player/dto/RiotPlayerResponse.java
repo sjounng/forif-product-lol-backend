@@ -3,10 +3,10 @@ package com.scrim.lolscrim.domain.player.dto;
 import java.util.Map;
 
 import com.scrim.lolscrim.domain.player.PlayerRating;
-import com.scrim.lolscrim.domain.player.RiotAccount;
-import com.scrim.lolscrim.domain.player.RiotRankSnapshot;
-import com.scrim.lolscrim.domain.session.Lane;
-import com.scrim.lolscrim.domain.session.Player;
+import com.scrim.lolscrim.domain.riot.RiotAccount;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshot;
+import com.scrim.lolscrim.domain.player.Lane;
+import com.scrim.lolscrim.domain.player.Player;
 
 public record RiotPlayerResponse(
 		Long id,

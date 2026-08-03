@@ -20,10 +20,10 @@ import com.scrim.lolscrim.domain.auth.UserSessionRepository;
 import com.scrim.lolscrim.domain.user.dto.ChangePasswordRequest;
 import com.scrim.lolscrim.global.error.ApiException;
 import com.scrim.lolscrim.domain.player.RiotProfileSyncService;
-import com.scrim.lolscrim.domain.player.RiotAccountRepository;
-import com.scrim.lolscrim.domain.player.RiotRankSnapshotRepository;
+import com.scrim.lolscrim.domain.riot.RiotAccountRepository;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshotRepository;
 import com.scrim.lolscrim.domain.group.RoomMembershipRepository;
-import com.scrim.lolscrim.domain.session.PlayerRepository;
+import com.scrim.lolscrim.domain.player.PlayerRepository;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;

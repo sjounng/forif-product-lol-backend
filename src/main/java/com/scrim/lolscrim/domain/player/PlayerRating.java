@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -23,10 +25,10 @@ public class PlayerRating {
 	@Column(name = "room_id", nullable = false)
 	private Long roomId;
 
-	@Column(nullable = false)
+	@Column(name = "rating", nullable = false)
 	private int rating;
 
-	@Column(nullable = false)
+	@Column(name = "rd", nullable = false)
 	private short rd;
 
 	@Column(name = "peak_rating", nullable = false)
@@ -35,33 +37,41 @@ public class PlayerRating {
 	@Column(name = "games_played", nullable = false)
 	private int gamesPlayed;
 
-	@Column(nullable = false)
+	@Column(name = "wins", nullable = false)
 	private int wins;
 
-	@Column(nullable = false)
+	@Column(name = "losses", nullable = false)
 	private int losses;
 
 	@Column(name = "win_streak", nullable = false)
 	private short winStreak;
 
+	@Enumerated(EnumType.STRING)
 	@Column(name = "seed_source", nullable = false)
-	private String seedSource;
+	private SeedSource seedSource;
+
+	@Column(name = "seed_rating")
+	private Integer seedRating;
 
 	@Column(name = "is_locked", nullable = false)
 	private boolean locked;
 
-	@Column(name = "updated_at", nullable = false)
+	@Column(name = "last_played_at")
+	private LocalDateTime lastPlayedAt;
+
+	@Column(name = "updated_at", insertable = false, updatable = false)
 	private LocalDateTime updatedAt;
 
-	public static PlayerRating initial(Long playerId, Long roomId, LocalDateTime now) {
-		PlayerRating rating = new PlayerRating();
-		rating.playerId = playerId;
-		rating.roomId = roomId;
-		rating.rating = 1500;
-		rating.rd = 350;
-		rating.peakRating = 1500;
-		rating.seedSource = "DEFAULT";
-		rating.updatedAt = now;
-		return rating;
+	public static PlayerRating seed(Long playerId, Long roomId, int rating, int rd, SeedSource seedSource) {
+		PlayerRating playerRating = new PlayerRating();
+		playerRating.playerId = playerId;
+		playerRating.roomId = roomId;
+		playerRating.rating = rating;
+		playerRating.rd = (short) rd;
+		playerRating.peakRating = rating;
+		playerRating.seedSource = seedSource;
+		playerRating.seedRating = rating;
+		return playerRating;
 	}
+
 }

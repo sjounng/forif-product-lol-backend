@@ -38,3 +38,7 @@ session-v1-*.log
 
 ### VS Code ###
 .vscode/
+
+### Secrets ###
+.env
+.env.*

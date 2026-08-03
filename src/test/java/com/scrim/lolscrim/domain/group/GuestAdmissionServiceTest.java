@@ -1,5 +1,9 @@
 package com.scrim.lolscrim.domain.group;
 
+import com.scrim.lolscrim.domain.room.Room;
+import com.scrim.lolscrim.domain.room.RoomRepository;
+import com.scrim.lolscrim.domain.room.RoomStatus;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,7 +22,7 @@ import com.scrim.lolscrim.domain.group.dto.GuestEntryRequest;
 import com.scrim.lolscrim.domain.group.dto.PublicRoomResponse;
 import com.scrim.lolscrim.global.error.ApiException;
 import com.scrim.lolscrim.global.error.ErrorCode;
-import com.scrim.lolscrim.domain.session.PlayerRepository;
+import com.scrim.lolscrim.domain.player.PlayerRepository;
 
 @ExtendWith(MockitoExtension.class)
 class GuestAdmissionServiceTest {

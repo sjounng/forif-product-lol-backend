@@ -1,5 +1,9 @@
 package com.scrim.lolscrim.domain.group;
 
+import com.scrim.lolscrim.domain.room.RoomRepository;
+import com.scrim.lolscrim.domain.room.Room;
+import com.scrim.lolscrim.domain.room.RoomStatus;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -20,9 +24,9 @@ import com.scrim.lolscrim.domain.group.dto.RoomResponse;
 import com.scrim.lolscrim.domain.user.User;
 import com.scrim.lolscrim.domain.user.UserRepository;
 import com.scrim.lolscrim.domain.user.UserStatus;
-import com.scrim.lolscrim.domain.session.PlayerRepository;
-import com.scrim.lolscrim.domain.player.RiotAccountRepository;
-import com.scrim.lolscrim.domain.player.RiotRankSnapshotRepository;
+import com.scrim.lolscrim.domain.player.PlayerRepository;
+import com.scrim.lolscrim.domain.riot.RiotAccountRepository;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshotRepository;
 import com.scrim.lolscrim.domain.player.PlayerRatingRepository;
 import com.scrim.lolscrim.global.error.ApiException;
 import com.scrim.lolscrim.global.error.ErrorCode;

@@ -1,7 +1,7 @@
 package com.scrim.lolscrim.domain.player.dto;
 
-import com.scrim.lolscrim.domain.player.RiotAccount;
-import com.scrim.lolscrim.domain.player.RiotRankSnapshot;
+import com.scrim.lolscrim.domain.riot.RiotAccount;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshot;
 
 import java.time.LocalDateTime;
 
@@ -20,8 +20,8 @@ public record RiotAccountResponse(
 		return new RiotAccountResponse(
 				account.getGameName(),
 				account.getTagLine(),
-				rank == null ? "UNRANKED" : rank.getTier(),
-				rank == null ? null : rank.getDivision(),
+				rank == null ? "UNRANKED" : rank.getTier().name(),
+				rank == null || rank.getRankDivision() == null ? null : rank.getRankDivision().name(),
 				rank == null ? 0 : rank.getLeaguePoints(),
 				rank == null ? 0 : rank.getWins(),
 				rank == null ? 0 : rank.getLosses(),

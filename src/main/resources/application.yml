@@ -27,9 +27,8 @@ server:
 
 app:
   jwt:
-    # 운영에서는 반드시 환경변수로 주입 (32바이트 이상)
     secret: ${JWT_SECRET:dev-only-secret-key-change-me-0123456789abcdef}
-    access-token-ttl-seconds: 1800        # 30분
+    access-token-ttl-seconds: 1800
   refresh-token-ttl-days: 14
   password-reset-token-ttl-minutes: 15
   password-reset-rate-limit:
@@ -44,9 +43,8 @@ app:
     sync-on-startup: true
     connect-timeout-millis: 5000
     read-timeout-millis: 10000
-  riot-api:
+  riot:
     api-key: ${RIOT_API_KEY:}
-    account-base-url: https://asia.api.riotgames.com
-    platform-base-url: https://kr.api.riotgames.com
-    connect-timeout-millis: 5000
-    read-timeout-millis: 10000
+    account-region: asia
+    platform: KR
+    lane-analysis-match-count: 20

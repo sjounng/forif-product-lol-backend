@@ -1,5 +1,7 @@
 package com.scrim.lolscrim.domain.session;
 
+import com.scrim.lolscrim.domain.player.Lane;
+
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;

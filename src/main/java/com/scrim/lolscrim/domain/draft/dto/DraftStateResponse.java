@@ -7,7 +7,7 @@ import java.util.Map;
 import com.scrim.lolscrim.domain.draft.DraftActionType;
 import com.scrim.lolscrim.domain.match.DraftStatus;
 import com.scrim.lolscrim.domain.session.FearlessMode;
-import com.scrim.lolscrim.domain.session.Lane;
+import com.scrim.lolscrim.domain.player.Lane;
 import com.scrim.lolscrim.domain.session.TeamSide;
 
 public record DraftStateResponse(

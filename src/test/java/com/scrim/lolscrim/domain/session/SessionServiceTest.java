@@ -26,10 +26,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.scrim.lolscrim.domain.group.GuestSessionRepository;
-import com.scrim.lolscrim.domain.group.Room;
+import com.scrim.lolscrim.domain.room.Room;
 import com.scrim.lolscrim.domain.group.RoomMembership;
 import com.scrim.lolscrim.domain.group.RoomMembershipRepository;
-import com.scrim.lolscrim.domain.group.RoomRepository;
+import com.scrim.lolscrim.domain.player.Lane;
+import com.scrim.lolscrim.domain.player.PlayerRepository;
+import com.scrim.lolscrim.domain.player.Player;
+import com.scrim.lolscrim.domain.room.RoomRepository;
 import com.scrim.lolscrim.domain.session.dto.CreateSessionRequest;
 import com.scrim.lolscrim.domain.session.dto.SessionResponse;
 import com.scrim.lolscrim.domain.session.dto.SessionRosterMemberRequest;
@@ -37,7 +40,7 @@ import com.scrim.lolscrim.domain.user.User;
 import com.scrim.lolscrim.domain.user.UserRepository;
 import com.scrim.lolscrim.global.error.ApiException;
 import com.scrim.lolscrim.global.error.ErrorCode;
-import com.scrim.lolscrim.domain.player.RiotAccountRepository;
+import com.scrim.lolscrim.domain.riot.RiotAccountRepository;
 
 @ExtendWith(MockitoExtension.class)
 class SessionServiceTest {

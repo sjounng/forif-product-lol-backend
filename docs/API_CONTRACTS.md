@@ -1,5 +1,12 @@
 # API contracts
 
+## Domain ownership
+
+- `domain.room` owns the single `Room`, `RoomRepository`, and `RoomStatus` mapping for the `rooms` table.
+- `domain.player` owns the single `Player`, `PlayerRepository`, and `Lane` mapping used by groups, sessions, matches, and drafts.
+- `domain.riot` owns Riot API access and the `RiotAccount`/`RiotRankSnapshot` persistence model.
+- `domain.group` extends the room model with memberships, invitations, guest admission, and group-oriented HTTP APIs; it does not map `rooms` again.
+
 ## Contract: auth-v1
 
 - 로그인과 토큰 재발급은 액세스 토큰을 JSON으로 반환한다.

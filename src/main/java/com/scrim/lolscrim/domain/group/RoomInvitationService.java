@@ -1,5 +1,8 @@
 package com.scrim.lolscrim.domain.group;
 
+import com.scrim.lolscrim.domain.room.Room;
+import com.scrim.lolscrim.domain.room.RoomRepository;
+
 import java.time.LocalDateTime;
 import java.util.List;
 

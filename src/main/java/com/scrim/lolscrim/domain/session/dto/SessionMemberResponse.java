@@ -1,6 +1,6 @@
 package com.scrim.lolscrim.domain.session.dto;
 
-import com.scrim.lolscrim.domain.session.Lane;
+import com.scrim.lolscrim.domain.player.Lane;
 import com.scrim.lolscrim.domain.session.ParticipantType;
 
 public record SessionMemberResponse(

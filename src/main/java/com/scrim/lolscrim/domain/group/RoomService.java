@@ -20,12 +20,16 @@ import com.scrim.lolscrim.domain.group.dto.JoinRoomRequest;
 import com.scrim.lolscrim.domain.user.User;
 import com.scrim.lolscrim.domain.user.UserRepository;
 import com.scrim.lolscrim.domain.user.UserStatus;
-import com.scrim.lolscrim.domain.session.PlayerRepository;
-import com.scrim.lolscrim.domain.session.Player;
-import com.scrim.lolscrim.domain.player.RiotAccount;
-import com.scrim.lolscrim.domain.player.RiotAccountRepository;
-import com.scrim.lolscrim.domain.player.RiotRankSnapshot;
-import com.scrim.lolscrim.domain.player.RiotRankSnapshotRepository;
+import com.scrim.lolscrim.domain.room.Room;
+import com.scrim.lolscrim.domain.room.RoomRepository;
+import com.scrim.lolscrim.domain.room.RoomStatus;
+import com.scrim.lolscrim.domain.player.PlayerRepository;
+import com.scrim.lolscrim.domain.player.Player;
+import com.scrim.lolscrim.domain.riot.RiotAccount;
+import com.scrim.lolscrim.domain.riot.RiotAccountRepository;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshot;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshotRepository;
+import com.scrim.lolscrim.domain.riot.QueueType;
 import com.scrim.lolscrim.domain.player.PlayerRatingRepository;
 import com.scrim.lolscrim.domain.player.dto.RiotPlayerResponse;
 import com.scrim.lolscrim.global.error.ApiException;
@@ -287,7 +291,7 @@ public class RoomService {
 			return null;
 		}
 		RiotRankSnapshot rank = rankRepository
-				.findFirstByRiotAccountIdAndQueueTypeOrderByCapturedAtDesc(account.getId(), "RANKED_SOLO_5x5")
+				.findFirstByRiotAccountIdAndQueueTypeOrderByCapturedAtDesc(account.getId(), QueueType.RANKED_SOLO_5x5)
 				.orElse(null);
 		return RiotPlayerResponse.from(player, account, rank, ratingRepository.findById(player.getId()).orElse(null));
 	}

@@ -27,9 +27,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import com.scrim.lolscrim.domain.group.GuestSession;
 import com.scrim.lolscrim.domain.group.GuestSessionRepository;
-import com.scrim.lolscrim.domain.group.Room;
+import com.scrim.lolscrim.domain.room.Room;
 import com.scrim.lolscrim.domain.group.RoomMembershipRepository;
-import com.scrim.lolscrim.domain.group.RoomRepository;
+import com.scrim.lolscrim.domain.player.Player;
+import com.scrim.lolscrim.domain.player.PlayerRepository;
+import com.scrim.lolscrim.domain.player.Lane;
+import com.scrim.lolscrim.domain.room.RoomRepository;
 import com.scrim.lolscrim.domain.group.dto.GroupUserResponse;
 import com.scrim.lolscrim.domain.session.dto.CreateSessionRequest;
 import com.scrim.lolscrim.domain.session.dto.SessionMemberResponse;
@@ -39,8 +42,8 @@ import com.scrim.lolscrim.domain.session.dto.SessionTeamResponse;
 import com.scrim.lolscrim.domain.session.dto.SessionViewerResponse;
 import com.scrim.lolscrim.domain.user.User;
 import com.scrim.lolscrim.domain.user.UserRepository;
-import com.scrim.lolscrim.domain.player.RiotAccount;
-import com.scrim.lolscrim.domain.player.RiotAccountRepository;
+import com.scrim.lolscrim.domain.riot.RiotAccount;
+import com.scrim.lolscrim.domain.riot.RiotAccountRepository;
 import com.scrim.lolscrim.global.error.ApiException;
 
 import lombok.RequiredArgsConstructor;

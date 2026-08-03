@@ -14,12 +14,17 @@ import org.springframework.transaction.annotation.Transactional;
 import com.scrim.lolscrim.domain.group.GroupRole;
 import com.scrim.lolscrim.domain.group.RoomMembership;
 import com.scrim.lolscrim.domain.group.RoomMembershipRepository;
-import com.scrim.lolscrim.domain.group.RoomRepository;
+import com.scrim.lolscrim.domain.room.RoomRepository;
+import com.scrim.lolscrim.domain.riot.QueueType;
+import com.scrim.lolscrim.domain.riot.RiotAccount;
+import com.scrim.lolscrim.domain.riot.RiotAccountRepository;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshotRepository;
+import com.scrim.lolscrim.domain.riot.Tier;
 import com.scrim.lolscrim.domain.player.RiotProfileSyncService.SyncedRiotProfile;
 import com.scrim.lolscrim.domain.player.dto.AddRiotPlayerRequest;
 import com.scrim.lolscrim.domain.player.dto.RiotPlayerResponse;
-import com.scrim.lolscrim.domain.session.Player;
-import com.scrim.lolscrim.domain.session.PlayerRepository;
+import com.scrim.lolscrim.domain.player.Player;
+import com.scrim.lolscrim.domain.player.PlayerRepository;
 import com.scrim.lolscrim.global.error.ApiException;
 import com.scrim.lolscrim.global.error.ErrorCode;
 
@@ -33,6 +38,7 @@ public class RiotPlayerService {
 	private final RiotAccountRepository riotAccountRepository;
 	private final PlayerRepository playerRepository;
 	private final PlayerRatingRepository ratingRepository;
+	private final PlayerLaneRatingRepository laneRatingRepository;
 	private final RiotRankSnapshotRepository rankRepository;
 	private final RoomRepository roomRepository;
 	private final RoomMembershipRepository membershipRepository;
@@ -55,7 +61,7 @@ public class RiotPlayerService {
 						player,
 						accounts.get(player.getRiotAccountId()),
 						rankRepository.findFirstByRiotAccountIdAndQueueTypeOrderByCapturedAtDesc(
-								player.getRiotAccountId(), "RANKED_SOLO_5x5").orElse(null),
+								player.getRiotAccountId(), QueueType.RANKED_SOLO_5x5).orElse(null),
 						ratings.get(player.getId())))
 				.toList();
 	}
@@ -82,8 +88,31 @@ public class RiotPlayerService {
 			player.refreshDisplayName(account.getGameName(), now);
 		}
 		PlayerRating rating = ratingRepository.findById(player.getId())
-				.orElseGet(() -> ratingRepository.save(PlayerRating.initial(player.getId(), roomId, now)));
+				.orElseGet(() -> seedRating(player.getId(), roomId, synced));
 		return RiotPlayerResponse.from(player, account, synced.rank(), rating);
+	}
+
+	private PlayerRating seedRating(Long playerId, Long roomId, SyncedRiotProfile synced) {
+		boolean ranked = synced.rank() != null && synced.rank().getTier() != Tier.UNRANKED;
+		RatingSeedCalculator.Seed seed = ranked
+				? RatingSeedCalculator.fromLadderScore(synced.rank().getLadderScore())
+				: RatingSeedCalculator.defaultSeed();
+		PlayerRating rating = ratingRepository.save(PlayerRating.seed(
+				playerId,
+				roomId,
+				seed.rating(),
+				seed.rd(),
+				ranked ? SeedSource.SOLO_RANK : SeedSource.DEFAULT));
+		laneRatingRepository.saveAll(synced.lanePool().entrySet().stream()
+				.map(entry -> PlayerLaneRating.seed(
+						playerId,
+						entry.getKey(),
+						roomId,
+						seed.rating(),
+						RatingSeedCalculator.laneRd(seed.rd(), entry.getValue()),
+						entry.getValue()))
+				.toList());
+		return rating;
 	}
 
 	public List<RiotPlayerResponse> syncPlayers(Long userId, Long roomId) {
@@ -114,7 +143,7 @@ public class RiotPlayerService {
 				player,
 				account,
 				rankRepository.findFirstByRiotAccountIdAndQueueTypeOrderByCapturedAtDesc(
-						account.getId(), "RANKED_SOLO_5x5").orElse(null),
+						account.getId(), QueueType.RANKED_SOLO_5x5).orElse(null),
 				ratingRepository.findById(playerId).orElse(null));
 	}
 

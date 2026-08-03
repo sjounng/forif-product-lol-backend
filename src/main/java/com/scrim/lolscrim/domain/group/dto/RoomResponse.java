@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 import com.scrim.lolscrim.domain.group.CaptainInvitationStatus;
 import com.scrim.lolscrim.domain.group.GroupRole;
-import com.scrim.lolscrim.domain.group.RoomStatus;
+import com.scrim.lolscrim.domain.room.RoomStatus;
 
 public record RoomResponse(
 		Long id,
