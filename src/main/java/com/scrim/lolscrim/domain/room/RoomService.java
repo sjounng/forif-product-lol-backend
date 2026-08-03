@@ -21,6 +21,8 @@ public class RoomService {
 
 	private static final String CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 헷갈리는 0/O, 1/I 제외
 	private static final int PUBLIC_CODE_LENGTH = 8;
+	/** 이보다 짧으면 앞2+뒤1을 남기는 게 원문 노출이라 전부 가린다. */
+	private static final int MIN_MASKABLE_LENGTH = 5;
 	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
 	private final RoomRepository roomRepository;
@@ -77,12 +79,19 @@ public class RoomService {
 		return sb.toString();
 	}
 
-	private static String maskEntryCode(String entryCode) {
-		if (entryCode.length() <= 3) {
-			return entryCode.charAt(0) + "*".repeat(entryCode.length() - 1);
+	/**
+	 * 관리자 UI 표시용 마스킹 (예: SCRIM123 -&gt; SC*****3).
+	 *
+	 * 주의: {@code char + char} 는 문자열 연결이 아니라 정수 덧셈이므로 반드시 문자열로 먼저 자를 것.
+	 * 짧은 코드는 힌트로 원문이 드러나므로 통째로 가린다.
+	 */
+	static String maskEntryCode(String entryCode) {
+		int length = entryCode.length();
+		if (length < MIN_MASKABLE_LENGTH) {
+			return "*".repeat(length);
 		}
-		return entryCode.charAt(0) + entryCode.charAt(1)
-				+ "*".repeat(entryCode.length() - 3)
-				+ entryCode.charAt(entryCode.length() - 1);
+		return entryCode.substring(0, 2)
+				+ "*".repeat(length - 3)
+				+ entryCode.charAt(length - 1);
 	}
 }
