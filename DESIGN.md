@@ -9,15 +9,38 @@
 
 ### §4.1 솔로/듀오 랭크 → `ladder_score` (0~4000)
 
-```
-tier_index  = IRON(0) BRONZE(1) SILVER(2) GOLD(3) PLATINUM(4) EMERALD(5) DIAMOND(6) MASTER(7) GRANDMASTER(8) CHALLENGER(9)
-division    = IV(0) III(1) II(2) I(3)        ※ 마스터 이상은 division 없음
+**다이아 이하** (LP 0~99)
 
-ladder_score = tier_index * 400 + division * 100 + LP     (0~4000 클램프)
 ```
-마스터 이상은 `tier_index*400 + LP`. 4000 초과 시 4000으로 클램프.
+tier_index  = IRON(0) BRONZE(1) SILVER(2) GOLD(3) PLATINUM(4) EMERALD(5) DIAMOND(6)
+division    = IV(0) III(1) II(2) I(3)
+
+ladder_score = tier_index * 400 + division * 100 + LP
+```
 
 검증 예: **골드2 0LP** → 3×400 + 2×100 + 0 = **1400**
+
+**마스터 이상** (LP 상한 없음)
+
+```
+ladder_score = 2800 + 1200 * log10(1 + LP/300) / log10(1 + 3000/300)      (상한 4000)
+```
+
+**티어 인덱스를 더하지 않는다.** Master/GM/Challenger 는 하나의 연속된 LP 풀을 공유하기 때문이다 — 챌린저는 정의상 GM 보다 LP 가 높으므로 **LP 만으로 이미 순서가 정해진다.** 여기에 `tier_index*400` 을 또 더하면 이중 계산이 되고, 실제로 챌린저는 LP 400 만 넘으면 전원 상한(4000)에 붙어 서로 구분이 사라진다.
+
+> 실측으로 확인된 문제다. KR 챌린저 12명(LP 1901~2650)을 등록했더니 `ladder_score` 가 전부 4000, `rating` 이 전부 4100 으로 동점이 되어 **팀 밸런싱이 불가능**했다. 수정 후 3897~4044 로 벌어진다.
+
+로그 압축을 쓰는 이유는, 선형으로 두면 LP 2000 인 사람이 LP 500 인 사람보다 4배 세다는 뜻이 되어 상위 구간을 과대평가하기 때문이다. 그 구간 전체가 이미 상위 0.01% 안이라 실력 차가 LP 차만큼 벌어지지 않는다.
+
+| 구간 | ladder_score |
+|---|---|
+| 다이아 I 99LP | 2799 |
+| 마스터 0LP | **2800** ← 연속 |
+| 마스터 200LP | 3056 |
+| GM 800LP | 3450 |
+| 챌린저 1500LP | 3697 |
+| 챌린저 2650LP | 3944 |
+| 챌린저 3000LP+ | 4000 (상한) |
 
 `RANKED_SOLO_5x5`를 우선 조회하고, UNRANKED면 `RANKED_FLEX_SR`로 폴백한다. 둘 다 없으면 §4.1-B(수동 시드)로 간다.
 
