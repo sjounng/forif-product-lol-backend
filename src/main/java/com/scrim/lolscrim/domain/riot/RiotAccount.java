@@ -2,6 +2,8 @@ package com.scrim.lolscrim.domain.riot;
 
 import java.time.LocalDateTime;
 
+import com.scrim.lolscrim.domain.player.Lane;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -46,6 +48,14 @@ public class RiotAccount {
 	@Column(name = "summoner_level")
 	private Integer summonerLevel;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "primary_lane")
+	private Lane primaryLane;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "secondary_lane")
+	private Lane secondaryLane;
+
 	@Column(name = "last_synced_at")
 	private LocalDateTime lastSyncedAt;
 
@@ -75,6 +85,11 @@ public class RiotAccount {
 		this.summonerLevel = summonerLevel;
 		this.syncStatus = RiotSyncStatus.OK;
 		this.lastSyncedAt = now;
+	}
+
+	public void applyLanePreferences(Lane primaryLane, Lane secondaryLane) {
+		this.primaryLane = primaryLane;
+		this.secondaryLane = secondaryLane;
 	}
 
 	public void markSyncFailed(RiotSyncStatus status, LocalDateTime now) {

@@ -36,6 +36,9 @@ public class User {
 	@Column(name = "avatar_url", length = 255)
 	private String avatarUrl;
 
+	@Column(name = "riot_account_id")
+	private Long riotAccountId;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, columnDefinition = "enum('ACTIVE','SUSPENDED','DELETED')")
 	private UserStatus status;
@@ -72,5 +75,9 @@ public class User {
 
 	public void changePassword(String newPasswordHash) {
 		this.passwordHash = newPasswordHash;
+	}
+
+	public void linkRiotAccount(Long riotAccountId) {
+		this.riotAccountId = riotAccountId;
 	}
 }

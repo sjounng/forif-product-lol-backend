@@ -12,7 +12,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/** PK가 player_id 그 자체다 (players 와 1:1, 별도 auto-increment 없음). */
 @Entity
 @Table(name = "player_ratings")
 @Getter
@@ -29,7 +28,6 @@ public class PlayerRating {
 	@Column(name = "rating", nullable = false)
 	private int rating;
 
-	/** smallint unsigned */
 	@Column(name = "rd", nullable = false)
 	private short rd;
 
@@ -45,7 +43,6 @@ public class PlayerRating {
 	@Column(name = "losses", nullable = false)
 	private int losses;
 
-	/** smallint (음수면 연패) */
 	@Column(name = "win_streak", nullable = false)
 	private short winStreak;
 
@@ -66,14 +63,15 @@ public class PlayerRating {
 	private LocalDateTime updatedAt;
 
 	public static PlayerRating seed(Long playerId, Long roomId, int rating, int rd, SeedSource seedSource) {
-		PlayerRating pr = new PlayerRating();
-		pr.playerId = playerId;
-		pr.roomId = roomId;
-		pr.rating = rating;
-		pr.rd = (short) rd;
-		pr.peakRating = rating;
-		pr.seedSource = seedSource;
-		pr.seedRating = rating;
-		return pr;
+		PlayerRating playerRating = new PlayerRating();
+		playerRating.playerId = playerId;
+		playerRating.roomId = roomId;
+		playerRating.rating = rating;
+		playerRating.rd = (short) rd;
+		playerRating.peakRating = rating;
+		playerRating.seedSource = seedSource;
+		playerRating.seedRating = rating;
+		return playerRating;
 	}
+
 }

@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -23,6 +24,15 @@ public class WebConfig implements WebMvcConfigurer {
 	private final AuthUserIdArgumentResolver authUserIdArgumentResolver;
 
 	@Override
+	public void addCorsMappings(CorsRegistry registry) {
+		registry.addMapping("/api/**")
+				.allowedOrigins("http://localhost:3000", "http://localhost:3001")
+				.allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+				.allowedHeaders("*")
+				.allowCredentials(true);
+	}
+
+	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry.addInterceptor(authInterceptor)
 				.addPathPatterns("/api/**")
@@ -32,7 +42,9 @@ public class WebConfig implements WebMvcConfigurer {
 						"/api/auth/refresh",
 						"/api/auth/logout",
 						"/api/auth/password-reset/request",
-						"/api/auth/password-reset/confirm");
+						"/api/auth/password-reset/confirm",
+						"/api/champions",
+						"/api/public/**");
 	}
 
 	@Override

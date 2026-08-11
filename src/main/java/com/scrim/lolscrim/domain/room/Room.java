@@ -27,6 +27,9 @@ public class Room {
 	@Column(name = "owner_user_id", nullable = false)
 	private Long ownerUserId;
 
+	@Column(name = "opponent_captain_user_id")
+	private Long opponentCaptainUserId;
+
 	@Column(name = "name", nullable = false, length = 100)
 	private String name;
 
@@ -36,7 +39,7 @@ public class Room {
 	@Column(name = "public_code", nullable = false, length = 8)
 	private String publicCode;
 
-	@Column(name = "entry_code_hash", nullable = false)
+	@Column(name = "entry_code_hash", length = 255)
 	private String entryCodeHash;
 
 	@Column(name = "entry_code_hint", length = 20)
@@ -48,7 +51,9 @@ public class Room {
 	@Column(name = "guest_can_draft", nullable = false)
 	private boolean guestCanDraft;
 
-	/** tinyint unsigned */
+	@Column(name = "guest_admission_enabled", nullable = false)
+	private boolean guestAdmissionEnabled;
+
 	@Column(name = "team_size", nullable = false)
 	private byte teamSize;
 
@@ -63,8 +68,25 @@ public class Room {
 	private LocalDateTime updatedAt;
 
 	public static Room create(
-			Long ownerUserId, String name, String description, String publicCode,
-			String entryCodeHash, String entryCodeHint) {
+			Long ownerUserId,
+			String name,
+			String description,
+			String publicCode,
+			String entryCodeHash,
+			String entryCodeHint) {
+		return create(ownerUserId, name, description, publicCode, entryCodeHash, entryCodeHint, true,
+				LocalDateTime.now());
+	}
+
+	public static Room create(
+			Long ownerUserId,
+			String name,
+			String description,
+			String publicCode,
+			String entryCodeHash,
+			String entryCodeHint,
+			boolean guestAdmissionEnabled,
+			LocalDateTime now) {
 		Room room = new Room();
 		room.ownerUserId = ownerUserId;
 		room.name = name;
@@ -72,10 +94,54 @@ public class Room {
 		room.publicCode = publicCode;
 		room.entryCodeHash = entryCodeHash;
 		room.entryCodeHint = entryCodeHint;
-		room.entryCodeRotatedAt = LocalDateTime.now();
-		room.guestCanDraft = true;
+		room.entryCodeRotatedAt = now;
+		room.guestCanDraft = false;
+		room.guestAdmissionEnabled = guestAdmissionEnabled;
 		room.teamSize = 5;
 		room.status = RoomStatus.ACTIVE;
+		room.createdAt = now;
+		room.updatedAt = now;
 		return room;
+	}
+
+	public void assignOpponentCaptain(Long userId, LocalDateTime now) {
+		opponentCaptainUserId = userId;
+		updatedAt = now;
+	}
+
+	public void update(
+			String name,
+			String description,
+			Boolean guestAdmissionEnabled,
+			String entryCodeHash,
+			String entryCodeHint,
+			boolean updateEntryCode,
+			LocalDateTime now) {
+		if (name != null) {
+			this.name = name;
+		}
+		if (description != null) {
+			this.description = description.isBlank() ? null : description;
+		}
+		if (guestAdmissionEnabled != null) {
+			this.guestAdmissionEnabled = guestAdmissionEnabled;
+		}
+		if (updateEntryCode) {
+			this.entryCodeHash = entryCodeHash;
+			this.entryCodeHint = entryCodeHint;
+			this.entryCodeRotatedAt = now;
+		}
+		this.updatedAt = now;
+	}
+
+	public void rotatePublicCode(String publicCode, LocalDateTime now) {
+		this.publicCode = publicCode;
+		this.entryCodeRotatedAt = now;
+		this.updatedAt = now;
+	}
+
+	public void archive(LocalDateTime now) {
+		this.status = RoomStatus.ARCHIVED;
+		this.updatedAt = now;
 	}
 }

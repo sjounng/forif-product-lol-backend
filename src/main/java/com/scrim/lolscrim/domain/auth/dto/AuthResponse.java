@@ -1,9 +1,12 @@
 package com.scrim.lolscrim.domain.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public record AuthResponse(
 		String accessToken,
 		String tokenType,
 		long expiresIn,
+		@JsonIgnore
 		String refreshToken,
 		UserResponse user) {
 

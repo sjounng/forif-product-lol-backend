@@ -1,0 +1,7 @@
+package com.scrim.lolscrim.domain.player.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record RenameRiotPlayerRequest(@NotBlank @Size(max = 50) String displayName) {
+}

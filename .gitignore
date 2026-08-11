@@ -26,6 +26,9 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
+# local development logs
+session-v1-*.log
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/

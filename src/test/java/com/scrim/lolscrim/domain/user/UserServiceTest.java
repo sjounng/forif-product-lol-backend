@@ -19,6 +19,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.scrim.lolscrim.domain.auth.UserSessionRepository;
 import com.scrim.lolscrim.domain.user.dto.ChangePasswordRequest;
 import com.scrim.lolscrim.global.error.ApiException;
+import com.scrim.lolscrim.domain.player.RiotProfileSyncService;
+import com.scrim.lolscrim.domain.riot.RiotAccountRepository;
+import com.scrim.lolscrim.domain.riot.RiotRankSnapshotRepository;
+import com.scrim.lolscrim.domain.group.RoomMembershipRepository;
+import com.scrim.lolscrim.domain.player.PlayerRepository;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -34,6 +39,11 @@ class UserServiceTest {
 
 	@Mock
 	private PasswordEncoder passwordEncoder;
+	@Mock private RiotProfileSyncService riotProfileSyncService;
+	@Mock private RiotAccountRepository riotAccountRepository;
+	@Mock private RiotRankSnapshotRepository riotRankSnapshotRepository;
+	@Mock private RoomMembershipRepository roomMembershipRepository;
+	@Mock private PlayerRepository playerRepository;
 
 	@Mock
 	private User user;
@@ -42,7 +52,9 @@ class UserServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		userService = new UserService(userRepository, userSessionRepository, passwordEncoder);
+		userService = new UserService(
+				userRepository, userSessionRepository, passwordEncoder, riotProfileSyncService,
+				riotAccountRepository, riotRankSnapshotRepository, roomMembershipRepository, playerRepository);
 		when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 		when(user.getStatus()).thenReturn(UserStatus.ACTIVE);
 		lenient().when(user.getPasswordHash()).thenReturn("old-hash");
