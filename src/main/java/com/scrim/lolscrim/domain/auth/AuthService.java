@@ -1,12 +1,7 @@
 package com.scrim.lolscrim.domain.auth;
 
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.HexFormat;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -23,14 +18,13 @@ import com.scrim.lolscrim.domain.user.UserRepository;
 import com.scrim.lolscrim.domain.user.UserStatus;
 import com.scrim.lolscrim.global.auth.JwtProvider;
 import com.scrim.lolscrim.global.error.ApiException;
+import com.scrim.lolscrim.global.security.SecureTokens;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-
-	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
 	private final UserRepository userRepository;
 	private final UserSessionRepository userSessionRepository;
@@ -71,7 +65,7 @@ public class AuthService {
 	@Transactional
 	public AuthResponse refresh(String refreshToken, String userAgent, String remoteAddr) {
 		LocalDateTime now = LocalDateTime.now();
-		UserSession session = userSessionRepository.findByRefreshTokenHash(sha256Hex(refreshToken))
+		UserSession session = userSessionRepository.findByRefreshTokenHash(SecureTokens.sha256Hex(refreshToken))
 				.filter(s -> s.isUsable(now))
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."));
 		User user = userRepository.findById(session.getUserId())
@@ -87,7 +81,7 @@ public class AuthService {
 	@Transactional
 	public void logout(String refreshToken) {
 		LocalDateTime now = LocalDateTime.now();
-		userSessionRepository.findByRefreshTokenHash(sha256Hex(refreshToken))
+		userSessionRepository.findByRefreshTokenHash(SecureTokens.sha256Hex(refreshToken))
 				.filter(s -> s.getRevokedAt() == null)
 				.ifPresent(s -> s.revoke(now));
 	}
@@ -100,31 +94,16 @@ public class AuthService {
 	}
 
 	private AuthResponse issueTokens(User user, String userAgent, String remoteAddr, LocalDateTime now) {
-		String refreshToken = generateRefreshToken();
+		String refreshToken = SecureTokens.randomHex(32);
 		userSessionRepository.save(UserSession.create(
 				user.getId(),
-				sha256Hex(refreshToken),
+				SecureTokens.sha256Hex(refreshToken),
 				truncate(userAgent, 255),
 				toIpBytes(remoteAddr),
 				now.plusDays(refreshTokenTtlDays)));
 		String accessToken = jwtProvider.createAccessToken(user.getId());
 		return AuthResponse.of(accessToken, jwtProvider.getAccessTokenTtlSeconds(), refreshToken,
 				UserResponse.from(user));
-	}
-
-	private static String generateRefreshToken() {
-		byte[] bytes = new byte[32];
-		SECURE_RANDOM.nextBytes(bytes);
-		return HexFormat.of().formatHex(bytes);
-	}
-
-	private static String sha256Hex(String value) {
-		try {
-			MessageDigest digest = MessageDigest.getInstance("SHA-256");
-			return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
-		} catch (NoSuchAlgorithmException e) {
-			throw new IllegalStateException(e);
-		}
 	}
 
 	private static byte[] toIpBytes(String remoteAddr) {

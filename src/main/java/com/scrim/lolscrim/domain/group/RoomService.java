@@ -34,6 +34,7 @@ import com.scrim.lolscrim.domain.player.PlayerRatingRepository;
 import com.scrim.lolscrim.domain.player.dto.RiotPlayerResponse;
 import com.scrim.lolscrim.global.error.ApiException;
 import com.scrim.lolscrim.global.error.ErrorCode;
+import com.scrim.lolscrim.global.security.SecureTokens;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,7 +44,6 @@ public class RoomService {
 
 	private static final String PUBLIC_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 	private static final int PUBLIC_CODE_LENGTH = 8;
-	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
 	private final RoomRepository roomRepository;
 	private final RoomMembershipRepository membershipRepository;
@@ -406,12 +406,7 @@ public class RoomService {
 
 	private String generatePublicCode() {
 		for (int attempt = 0; attempt < 32; attempt++) {
-			StringBuilder code = new StringBuilder(PUBLIC_CODE_LENGTH);
-			for (int i = 0; i < PUBLIC_CODE_LENGTH; i++) {
-				code.append(PUBLIC_CODE_ALPHABET.charAt(
-						SECURE_RANDOM.nextInt(PUBLIC_CODE_ALPHABET.length())));
-			}
-			String candidate = code.toString();
+			String candidate = SecureTokens.randomFrom(PUBLIC_CODE_ALPHABET, PUBLIC_CODE_LENGTH);
 			if (!roomRepository.existsByPublicCode(candidate)) {
 				return candidate;
 			}

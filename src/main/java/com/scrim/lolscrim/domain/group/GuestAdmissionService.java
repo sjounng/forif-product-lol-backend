@@ -6,12 +6,7 @@ import com.scrim.lolscrim.domain.room.RoomStatus;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.HexFormat;
 import java.util.List;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,12 +22,11 @@ import com.scrim.lolscrim.global.error.ErrorCode;
 
 import lombok.RequiredArgsConstructor;
 import com.scrim.lolscrim.domain.player.PlayerRepository;
+import com.scrim.lolscrim.global.security.SecureTokens;
 
 @Service
 @RequiredArgsConstructor
 public class GuestAdmissionService {
-
-	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
 	private final RoomRepository roomRepository;
 	private final GuestSessionRepository guestSessionRepository;
@@ -56,7 +50,7 @@ public class GuestAdmissionService {
 
 		LocalDateTime now = LocalDateTime.now();
 		if (existingToken != null && !existingToken.isBlank()) {
-			GuestSession existing = guestSessionRepository.findByTokenHash(sha256Hex(existingToken))
+			GuestSession existing = guestSessionRepository.findByTokenHash(SecureTokens.sha256Hex(existingToken))
 					.filter(guest -> guest.getRoomId().equals(room.getId()))
 					.filter(guest -> guest.isUsable(now))
 					.orElse(null);
@@ -67,10 +61,10 @@ public class GuestAdmissionService {
 		}
 
 		byte[] ip = toIpBytes(remoteAddress);
-		String token = generateToken();
+		String token = SecureTokens.randomHex(32);
 		GuestSession guest = guestSessionRepository.save(GuestSession.create(
 				room.getId(),
-				sha256Hex(token),
+				SecureTokens.sha256Hex(token),
 				request.nickname().trim(),
 				ip,
 				now,
@@ -85,7 +79,7 @@ public class GuestAdmissionService {
 			throw new ApiException(ErrorCode.AUTH_REQUIRED, "게스트 세션이 필요합니다.");
 		}
 		LocalDateTime now = LocalDateTime.now();
-		GuestSession guest = guestSessionRepository.findByTokenHash(sha256Hex(token))
+		GuestSession guest = guestSessionRepository.findByTokenHash(SecureTokens.sha256Hex(token))
 				.filter(candidate -> candidate.getRoomId().equals(room.getId()))
 				.filter(candidate -> candidate.isUsable(now))
 				.orElseThrow(() -> new ApiException(ErrorCode.AUTH_INVALID, "게스트 세션이 만료되었습니다."));
@@ -136,7 +130,7 @@ public class GuestAdmissionService {
 		if (token == null || token.isBlank()) {
 			return;
 		}
-		GuestSession guest = guestSessionRepository.findByTokenHash(sha256Hex(token))
+		GuestSession guest = guestSessionRepository.findByTokenHash(SecureTokens.sha256Hex(token))
 				.filter(candidate -> candidate.getRoomId().equals(room.getId()))
 				.orElse(null);
 		if (guest == null) {
@@ -181,21 +175,6 @@ public class GuestAdmissionService {
 			throw new ApiException(
 					ErrorCode.GUEST_ENTRY_PASSWORD_INVALID,
 					"입장 암호가 올바르지 않습니다.");
-		}
-	}
-
-	private static String generateToken() {
-		byte[] bytes = new byte[32];
-		SECURE_RANDOM.nextBytes(bytes);
-		return HexFormat.of().formatHex(bytes);
-	}
-
-	private static String sha256Hex(String value) {
-		try {
-			MessageDigest digest = MessageDigest.getInstance("SHA-256");
-			return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
-		} catch (NoSuchAlgorithmException e) {
-			throw new IllegalStateException("SHA-256 is not available", e);
 		}
 	}
 
