@@ -1,11 +1,10 @@
 package com.scrim.lolscrim.domain.match;
 
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HexFormat;
 
 import com.scrim.lolscrim.domain.session.TeamSide;
+import com.scrim.lolscrim.global.security.SecureTokens;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,8 +23,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Draft {
-
-	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -98,7 +95,7 @@ public class Draft {
 		draft.sessionId = sessionId;
 		draft.rulesetId = "TOURNAMENT_STANDARD";
 		draft.status = DraftStatus.WAITING;
-		draft.spectatorToken = token();
+		draft.spectatorToken = SecureTokens.randomHex(16);
 		draft.currentStep = 0;
 		draft.timerSec = 30;
 		draft.blueReserveMs = 30_000;
@@ -213,9 +210,4 @@ public class Draft {
 		return lastEventSeq;
 	}
 
-	private static String token() {
-		byte[] bytes = new byte[16];
-		SECURE_RANDOM.nextBytes(bytes);
-		return HexFormat.of().formatHex(bytes);
-	}
 }

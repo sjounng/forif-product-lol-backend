@@ -1,9 +1,5 @@
 package com.scrim.lolscrim.domain.auth.password;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 
@@ -16,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import com.scrim.lolscrim.global.error.ApiException;
+import com.scrim.lolscrim.global.security.SecureTokens;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,8 +44,8 @@ public class PasswordResetRateLimiter {
 
 	public void check(String email, String remoteAddr) {
 		String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
-		checkBucket("password-reset:email:" + sha256Hex(normalizedEmail), emailLimit, emailWindowSeconds);
-		checkBucket("password-reset:ip:" + sha256Hex(normalizeIp(remoteAddr)), ipLimit, ipWindowSeconds);
+		checkBucket("password-reset:email:" + SecureTokens.sha256Hex(normalizedEmail), emailLimit, emailWindowSeconds);
+		checkBucket("password-reset:ip:" + SecureTokens.sha256Hex(normalizeIp(remoteAddr)), ipLimit, ipWindowSeconds);
 	}
 
 	private void checkBucket(String key, long limit, long windowSeconds) {
@@ -72,15 +69,6 @@ public class PasswordResetRateLimiter {
 
 	private static String normalizeIp(String remoteAddr) {
 		return remoteAddr == null || remoteAddr.isBlank() ? "unknown" : remoteAddr;
-	}
-
-	private static String sha256Hex(String value) {
-		try {
-			MessageDigest digest = MessageDigest.getInstance("SHA-256");
-			return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
-		} catch (NoSuchAlgorithmException e) {
-			throw new IllegalStateException(e);
-		}
 	}
 
 	private static ApiException unavailableException() {

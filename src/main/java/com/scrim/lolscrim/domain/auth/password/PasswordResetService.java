@@ -1,11 +1,6 @@
 package com.scrim.lolscrim.domain.auth.password;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.HexFormat;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -20,14 +15,13 @@ import com.scrim.lolscrim.domain.user.User;
 import com.scrim.lolscrim.domain.user.UserRepository;
 import com.scrim.lolscrim.domain.user.UserStatus;
 import com.scrim.lolscrim.global.error.ApiException;
+import com.scrim.lolscrim.global.security.SecureTokens;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class PasswordResetService {
-
-	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
 	private final UserRepository userRepository;
 	private final UserSessionRepository userSessionRepository;
@@ -48,7 +42,7 @@ public class PasswordResetService {
 	@Transactional
 	public void confirmReset(PasswordResetConfirmRequest request) {
 		LocalDateTime now = LocalDateTime.now();
-		PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHash(sha256Hex(request.resetToken()))
+		PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHash(SecureTokens.sha256Hex(request.resetToken()))
 				.filter(token -> token.isUsable(now))
 				.orElseThrow(() -> invalidTokenException());
 		User user = userRepository.findById(resetToken.getUserId())
@@ -67,27 +61,12 @@ public class PasswordResetService {
 	private void issueResetToken(User user, String email) {
 		LocalDateTime now = LocalDateTime.now();
 		passwordResetTokenRepository.markAllUsedByUserId(user.getId(), now);
-		String rawToken = generateToken();
+		String rawToken = SecureTokens.randomHex(32);
 		passwordResetTokenRepository.save(PasswordResetToken.create(
 				user.getId(),
-				sha256Hex(rawToken),
+				SecureTokens.sha256Hex(rawToken),
 				now.plusMinutes(tokenTtlMinutes)));
 		passwordResetNotifier.send(email, rawToken);
-	}
-
-	private static String generateToken() {
-		byte[] bytes = new byte[32];
-		SECURE_RANDOM.nextBytes(bytes);
-		return HexFormat.of().formatHex(bytes);
-	}
-
-	private static String sha256Hex(String value) {
-		try {
-			MessageDigest digest = MessageDigest.getInstance("SHA-256");
-			return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
-		} catch (NoSuchAlgorithmException e) {
-			throw new IllegalStateException(e);
-		}
 	}
 
 	private static ApiException invalidTokenException() {
