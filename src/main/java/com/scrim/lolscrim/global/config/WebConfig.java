@@ -43,7 +43,7 @@ public class WebConfig implements WebMvcConfigurer {
 						"/api/auth/logout",
 						"/api/auth/password-reset/request",
 						"/api/auth/password-reset/confirm",
-						"/api/champions",
+						"/api/champions/**",
 						"/api/public/**");
 	}
 

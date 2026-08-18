@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.scrim.lolscrim.domain.auth.AuthController;
 import com.scrim.lolscrim.domain.auth.AuthService;
 import com.scrim.lolscrim.domain.champion.dto.ChampionResponse;
+import com.scrim.lolscrim.domain.champion.dto.ChampionAnalyticsResponse;
 import com.scrim.lolscrim.global.auth.AuthInterceptor;
 import com.scrim.lolscrim.global.auth.AuthUserIdArgumentResolver;
 import com.scrim.lolscrim.global.auth.JwtProvider;
@@ -74,6 +75,17 @@ class ChampionApiSecurityTest {
 				.andExpect(header().string(
 						"Access-Control-Allow-Origin",
 						"http://localhost:3000"));
+	}
+
+	@Test
+	void globalAnalyticsAreAvailableWithoutAuthentication() throws Exception {
+		when(championService.getGlobalAnalytics()).thenReturn(
+				new ChampionAnalyticsResponse(12L, List.of()));
+
+		mockMvc.perform(get("/api/champions/analytics"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.totalMatches").value(12))
+				.andExpect(jsonPath("$.rows").isArray());
 	}
 
 	@Test
