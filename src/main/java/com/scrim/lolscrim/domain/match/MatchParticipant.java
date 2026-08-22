@@ -2,6 +2,7 @@ package com.scrim.lolscrim.domain.match;
 
 import java.math.BigDecimal;
 
+import com.scrim.lolscrim.domain.player.AssignedFrom;
 import com.scrim.lolscrim.domain.player.Lane;
 import com.scrim.lolscrim.domain.session.SessionTeamMember;
 import com.scrim.lolscrim.domain.session.TeamSide;
@@ -45,8 +46,9 @@ public class MatchParticipant {
 	@Column(nullable = false)
 	private Lane lane;
 
+	@Enumerated(EnumType.STRING)
 	@Column(name = "assigned_from", nullable = false)
-	private String assignedFrom;
+	private AssignedFrom assignedFrom;
 
 	@Column(name = "off_role_factor", nullable = false)
 	private BigDecimal offRoleFactor;
@@ -78,14 +80,23 @@ public class MatchParticipant {
 			Long roomId,
 			SessionTeamMember member,
 			TeamSide matchSide) {
+		return from(matchId, roomId, member, matchSide, AssignedFrom.PRIMARY);
+	}
+
+	public static MatchParticipant from(
+			Long matchId,
+			Long roomId,
+			SessionTeamMember member,
+			TeamSide matchSide,
+			AssignedFrom assignedFrom) {
 		MatchParticipant participant = new MatchParticipant();
 		participant.matchId = matchId;
 		participant.playerId = member.getPlayerId();
 		participant.roomId = roomId;
 		participant.side = matchSide;
 		participant.lane = member.getLane();
-		participant.assignedFrom = "PRIMARY";
-		participant.offRoleFactor = BigDecimal.ONE;
+		participant.assignedFrom = assignedFrom;
+		participant.offRoleFactor = assignedFrom.offRoleFactor();
 		return participant;
 	}
 

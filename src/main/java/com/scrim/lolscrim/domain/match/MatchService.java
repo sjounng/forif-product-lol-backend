@@ -20,6 +20,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -42,8 +43,12 @@ import com.scrim.lolscrim.domain.match.dto.MatchScoreResponse;
 import com.scrim.lolscrim.domain.match.dto.MatchStartRequestResponse;
 import com.scrim.lolscrim.domain.match.dto.ProposeMatchResultRequest;
 import com.scrim.lolscrim.domain.session.MatchFormat;
+import com.scrim.lolscrim.domain.player.AssignedFrom;
+import com.scrim.lolscrim.domain.player.Lane;
 import com.scrim.lolscrim.domain.player.Player;
 import com.scrim.lolscrim.domain.player.PlayerRepository;
+import com.scrim.lolscrim.domain.riot.RiotAccount;
+import com.scrim.lolscrim.domain.riot.RiotAccountRepository;
 import com.scrim.lolscrim.domain.session.ScrimSession;
 import com.scrim.lolscrim.domain.session.ScrimSessionRepository;
 import com.scrim.lolscrim.domain.session.SessionStatus;
@@ -81,8 +86,10 @@ public class MatchService {
 	private final DraftRepository draftRepository;
 	private final DraftActionRepository draftActionRepository;
 	private final PlayerRepository playerRepository;
+	private final RiotAccountRepository riotAccountRepository;
 	private final ChampionRepository championRepository;
 	private final UserRepository userRepository;
+	private final MatchRatingService ratingService;
 	private final Clock clock;
 
 	@Transactional(readOnly = true)
@@ -150,12 +157,14 @@ public class MatchService {
 		} catch (DataIntegrityViolationException exception) {
 			throw new ApiException(MATCH_ACTIVE_EXISTS, "동일한 매치가 이미 생성되었습니다.");
 		}
+		Map<Long, AssignedFrom> roleAssignments = deriveRoleAssignments(roster);
 		participantRepository.saveAll(roster.stream()
 				.map(member -> MatchParticipant.from(
 						match.getId(),
 						session.getRoomId(),
 						member,
-						match.matchSideForSessionTeam(member.getSide())))
+						match.matchSideForSessionTeam(member.getSide()),
+						roleAssignments.getOrDefault(member.getPlayerId(), AssignedFrom.FILL)))
 				.toList());
 		Draft draft = draftRepository.save(Draft.create(match.getId(), session.getId(), now));
 		request.accept(userId, match.getId(), now);
@@ -253,6 +262,7 @@ public class MatchService {
 		match.complete(now);
 		participantRepository.findAllByMatchId(matchId)
 				.forEach(participant -> participant.recordResult(match.getWinnerSide()));
+		ratingService.apply(match, session.isRatingEnabled(), now);
 		boolean finish = reachedWinCondition(session.getMatchFormat(), blueWins, redWins);
 		session.recordCompletedMatch(finish, now);
 		return toMatchResponse(match, requireDraft(matchId).getId(), userId, true);
@@ -482,6 +492,39 @@ public class MatchService {
 					.add(response);
 		}
 		return result;
+	}
+
+	/**
+	 * 배정 라인을 선호 라인과 비교해 오프롤 계수를 파생시킨다 (DESIGN §4.3).
+	 *
+	 * <p>매치 생성 시점에 확정해 participant 행에 박아둔다 — 나중에 선수가 선호 라인을 바꿔도
+	 * 이미 끝난 판의 계수는 흔들리지 않아야 하기 때문이다.
+	 * 선호가 없는 선수(Riot 계정 미연동 게스트 등)는 primaryLane 이 없는 것으로 보고 FILL 처리한다.
+	 */
+	private Map<Long, AssignedFrom> deriveRoleAssignments(List<SessionTeamMember> roster) {
+		Map<Long, Player> players = new HashMap<>();
+		playerRepository.findAllById(roster.stream().map(SessionTeamMember::getPlayerId).toList())
+				.forEach(player -> players.put(player.getId(), player));
+		Map<Long, RiotAccount> accounts = new HashMap<>();
+		riotAccountRepository.findAllById(players.values().stream()
+				.map(Player::getRiotAccountId)
+				.filter(Objects::nonNull)
+				.toList())
+				.forEach(account -> accounts.put(account.getId(), account));
+
+		Map<Long, AssignedFrom> assignments = new HashMap<>();
+		for (SessionTeamMember member : roster) {
+			Player player = players.get(member.getPlayerId());
+			RiotAccount account = player == null || player.getRiotAccountId() == null
+					? null
+					: accounts.get(player.getRiotAccountId());
+			Lane primary = account == null ? null : account.getPrimaryLane();
+			Lane secondary = account == null ? null : account.getSecondaryLane();
+			assignments.put(
+					member.getPlayerId(),
+					AssignedFrom.derive(member.getLane(), primary, secondary));
+		}
+		return assignments;
 	}
 
 	private Map<TeamSide, SessionTeam> teamsBySide(Long sessionId) {

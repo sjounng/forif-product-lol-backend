@@ -39,6 +39,7 @@ import com.scrim.lolscrim.domain.session.FearlessMode;
 import com.scrim.lolscrim.domain.player.Lane;
 import com.scrim.lolscrim.domain.session.MatchFormat;
 import com.scrim.lolscrim.domain.player.PlayerRepository;
+import com.scrim.lolscrim.domain.riot.RiotAccountRepository;
 import com.scrim.lolscrim.domain.session.ScrimSession;
 import com.scrim.lolscrim.domain.session.ScrimSessionRepository;
 import com.scrim.lolscrim.domain.session.SessionStatus;
@@ -78,9 +79,13 @@ class MatchServiceTest {
 	@Mock
 	private PlayerRepository playerRepository;
 	@Mock
+	private RiotAccountRepository riotAccountRepository;
+	@Mock
 	private ChampionRepository championRepository;
 	@Mock
 	private UserRepository userRepository;
+	@Mock
+	private MatchRatingService ratingService;
 
 	private MatchService service;
 
@@ -100,8 +105,10 @@ class MatchServiceTest {
 				draftRepository,
 				draftActionRepository,
 				playerRepository,
+				riotAccountRepository,
 				championRepository,
 				userRepository,
+				ratingService,
 				clock);
 	}
 
