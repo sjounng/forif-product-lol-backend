@@ -36,6 +36,8 @@ app:
     email-window-seconds: 300
     ip-limit: 20
     ip-window-seconds: 3600
+  champion-analytics:
+    cache-ttl: PT5M
   data-dragon:
     base-url: https://ddragon.leagueoflegends.com
     korean-locale: ko_KR

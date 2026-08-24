@@ -89,6 +89,12 @@ class ChampionApiSecurityTest {
 	}
 
 	@Test
+	void unlistedChampionApisRequireAuthentication() throws Exception {
+		mockMvc.perform(get("/api/champions/admin-sync"))
+				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
 	void otherProtectedApiStillRequiresAuthentication() throws Exception {
 		mockMvc.perform(get("/api/auth/me"))
 				.andExpect(status().isUnauthorized());

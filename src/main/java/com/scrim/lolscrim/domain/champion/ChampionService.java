@@ -1,8 +1,8 @@
 package com.scrim.lolscrim.domain.champion;
 
 import java.util.Comparator;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -16,36 +16,36 @@ import com.scrim.lolscrim.domain.champion.dto.ChampionResponse;
 import com.scrim.lolscrim.domain.match.ChampionLaneAnalyticsProjection;
 import com.scrim.lolscrim.domain.match.MatchParticipantRepository;
 import com.scrim.lolscrim.domain.match.MatchStatus;
-import com.scrim.lolscrim.domain.match.ScrimMatchRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class ChampionService {
-	private static final String NON_STANDARD_PREFIX = "Jade_";
-
 	private final ChampionRepository championRepository;
 	private final MatchParticipantRepository matchParticipantRepository;
-	private final ScrimMatchRepository scrimMatchRepository;
+	private final ChampionAnalyticsCache championAnalyticsCache;
 
 	@Transactional(readOnly = true)
 	public List<ChampionResponse> getActiveChampions() {
 		return championRepository.findAllByEnabledTrueOrderByNameKoAsc().stream()
-				.filter(ChampionService::isStandardChampion)
 				.map(ChampionResponse::from)
 				.toList();
 	}
 
 	@Transactional(readOnly = true)
-	public ChampionAnalyticsResponse getGlobalAnalytics() {
-		long totalMatches = scrimMatchRepository.countByStatus(MatchStatus.COMPLETED);
+	public synchronized ChampionAnalyticsResponse getGlobalAnalytics() {
+		return championAnalyticsCache.get().orElseGet(this::loadGlobalAnalytics);
+	}
+
+	private ChampionAnalyticsResponse loadGlobalAnalytics() {
+		long totalMatches = matchParticipantRepository
+				.countMatchesWithChampionByMatchStatus(MatchStatus.COMPLETED);
 		List<ChampionLaneAnalyticsProjection> projections =
 				matchParticipantRepository.aggregateChampionAnalyticsByMatchStatus(MatchStatus.COMPLETED);
 		Map<Integer, Champion> champions = championRepository.findAllById(
 				projections.stream().map(ChampionLaneAnalyticsProjection::getChampionId).distinct().toList())
 				.stream()
-				.filter(ChampionService::isStandardChampion)
 				.collect(Collectors.toMap(Champion::getId, Function.identity()));
 
 		List<ChampionLaneStat> rows = projections.stream()
@@ -55,7 +55,9 @@ public class ChampionService {
 						.comparing((ChampionLaneStat row) -> row.champion().nameKo())
 						.thenComparing(ChampionLaneStat::lane))
 				.toList();
-		return new ChampionAnalyticsResponse(totalMatches, rows);
+		ChampionAnalyticsResponse response = new ChampionAnalyticsResponse(totalMatches, rows);
+		championAnalyticsCache.put(response);
+		return response;
 	}
 
 	private static ChampionLaneStat toAnalyticsRow(
@@ -68,9 +70,5 @@ public class ChampionService {
 				projection.getWins(),
 				projection.getKdaSum(),
 				projection.getKdaSamples());
-	}
-
-	private static boolean isStandardChampion(Champion champion) {
-		return !champion.getRiotId().startsWith(NON_STANDARD_PREFIX);
 	}
 }

@@ -2,9 +2,11 @@ package com.scrim.lolscrim.domain.champion;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +19,6 @@ import com.scrim.lolscrim.domain.champion.dto.ChampionResponse;
 import com.scrim.lolscrim.domain.match.ChampionLaneAnalyticsProjection;
 import com.scrim.lolscrim.domain.match.MatchParticipantRepository;
 import com.scrim.lolscrim.domain.match.MatchStatus;
-import com.scrim.lolscrim.domain.match.ScrimMatchRepository;
 import com.scrim.lolscrim.domain.player.Lane;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,10 +29,10 @@ class ChampionServiceTest {
 	@Mock
 	private MatchParticipantRepository matchParticipantRepository;
 	@Mock
-	private ScrimMatchRepository scrimMatchRepository;
+	private ChampionAnalyticsCache championAnalyticsCache;
 
 	@Test
-	void returnsOnlyEnabledChampionsOrderedByKoreanName() {
+	void returnsEnabledChampionsOrderedByKoreanName() {
 		Champion aatrox = Champion.create(
 				"16.14.1",
 				new ChampionData(
@@ -42,9 +43,8 @@ class ChampionServiceTest {
 						List.of("Fighter"),
 						"https://ddragon.example/Aatrox.png"));
 		when(championRepository.findAllByEnabledTrueOrderByNameKoAsc()).thenReturn(List.of(aatrox));
-		ChampionService service = service();
 
-		List<ChampionResponse> responses = service.getActiveChampions();
+		List<ChampionResponse> responses = service().getActiveChampions();
 
 		assertThat(responses).singleElement().satisfies(response -> {
 			assertThat(response.id()).isEqualTo(266);
@@ -56,32 +56,76 @@ class ChampionServiceTest {
 	}
 
 	@Test
-	void globalAnalyticsIncludesAllCompletedMatchesAndExcludesJadeChampions() {
+	void globalAnalyticsCountsChampionRecordedMatchesAndMapsRows() {
 		Champion garen = champion(86, "Garen", "가렌");
-		Champion jadeGaren = champion(60086, "Jade_Garen", "가렌");
+		Champion ahri = champion(103, "Ahri", "아리");
 		ChampionLaneAnalyticsProjection garenTop = projection(86, Lane.TOP, 4L, 3L, 11.5, 4L);
-		ChampionLaneAnalyticsProjection jadeTop = org.mockito.Mockito.mock(ChampionLaneAnalyticsProjection.class);
-		when(jadeTop.getChampionId()).thenReturn(60086);
-		when(scrimMatchRepository.countByStatus(MatchStatus.COMPLETED)).thenReturn(7L);
+		ChampionLaneAnalyticsProjection ahriMid = projection(103, Lane.MID, 2L, 1L, 0.0, 0L);
+		when(championAnalyticsCache.get()).thenReturn(Optional.empty());
+		when(matchParticipantRepository.countMatchesWithChampionByMatchStatus(MatchStatus.COMPLETED))
+				.thenReturn(6L);
 		when(matchParticipantRepository.aggregateChampionAnalyticsByMatchStatus(MatchStatus.COMPLETED))
-				.thenReturn(List.of(garenTop, jadeTop));
-		when(championRepository.findAllById(List.of(86, 60086))).thenReturn(List.of(garen, jadeGaren));
+				.thenReturn(List.of(garenTop, ahriMid));
+		when(championRepository.findAllById(List.of(86, 103))).thenReturn(List.of(garen, ahri));
 
 		ChampionAnalyticsResponse response = service().getGlobalAnalytics();
 
-		assertThat(response.totalMatches()).isEqualTo(7L);
-		assertThat(response.rows()).singleElement().satisfies(row -> {
-			assertThat(row.champion().riotId()).isEqualTo("Garen");
-			assertThat(row.lane()).isEqualTo(Lane.TOP);
-			assertThat(row.picks()).isEqualTo(4L);
-			assertThat(row.wins()).isEqualTo(3L);
-			assertThat(row.kdaSum()).isEqualTo(11.5);
-			assertThat(row.kdaSamples()).isEqualTo(4L);
-		});
+		assertThat(response.totalMatches()).isEqualTo(6L);
+		assertThat(response.rows()).hasSize(2);
+		assertThat(response.rows().get(0).champion().riotId()).isEqualTo("Garen");
+		assertThat(response.rows().get(0).kdaSum()).isEqualTo(11.5);
+		assertThat(response.rows().get(1).champion().riotId()).isEqualTo("Ahri");
+		assertThat(response.rows().get(1).kdaSamples()).isZero();
+		verify(championAnalyticsCache).put(response);
+	}
+
+	@Test
+	void globalAnalyticsReturnsCachedResponseWithoutQueryingDatabase() {
+		ChampionAnalyticsResponse cached = new ChampionAnalyticsResponse(12L, List.of());
+		when(championAnalyticsCache.get()).thenReturn(Optional.of(cached));
+
+		ChampionAnalyticsResponse response = service().getGlobalAnalytics();
+
+		assertThat(response).isSameAs(cached);
+		verifyNoInteractions(championRepository, matchParticipantRepository);
+	}
+
+	@Test
+	void globalAnalyticsSupportsEmptyProjections() {
+		when(championAnalyticsCache.get()).thenReturn(Optional.empty());
+		when(matchParticipantRepository.countMatchesWithChampionByMatchStatus(MatchStatus.COMPLETED))
+				.thenReturn(0L);
+		when(matchParticipantRepository.aggregateChampionAnalyticsByMatchStatus(MatchStatus.COMPLETED))
+				.thenReturn(List.of());
+		when(championRepository.findAllById(List.of())).thenReturn(List.of());
+
+		ChampionAnalyticsResponse response = service().getGlobalAnalytics();
+
+		assertThat(response.totalMatches()).isZero();
+		assertThat(response.rows()).isEmpty();
+		verify(championAnalyticsCache).put(response);
+	}
+
+	@Test
+	void globalAnalyticsDropsRowsWithoutChampionMetadata() {
+		ChampionLaneAnalyticsProjection missingChampion =
+				org.mockito.Mockito.mock(ChampionLaneAnalyticsProjection.class);
+		when(missingChampion.getChampionId()).thenReturn(999);
+		when(championAnalyticsCache.get()).thenReturn(Optional.empty());
+		when(matchParticipantRepository.countMatchesWithChampionByMatchStatus(MatchStatus.COMPLETED))
+				.thenReturn(1L);
+		when(matchParticipantRepository.aggregateChampionAnalyticsByMatchStatus(MatchStatus.COMPLETED))
+				.thenReturn(List.of(missingChampion));
+		when(championRepository.findAllById(List.of(999))).thenReturn(List.of());
+
+		ChampionAnalyticsResponse response = service().getGlobalAnalytics();
+
+		assertThat(response.totalMatches()).isEqualTo(1L);
+		assertThat(response.rows()).isEmpty();
 	}
 
 	private ChampionService service() {
-		return new ChampionService(championRepository, matchParticipantRepository, scrimMatchRepository);
+		return new ChampionService(championRepository, matchParticipantRepository, championAnalyticsCache);
 	}
 
 	private Champion champion(int id, String riotId, String nameKo) {

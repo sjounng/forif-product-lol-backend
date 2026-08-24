@@ -23,8 +23,6 @@ public interface ScrimMatchRepository extends JpaRepository<ScrimMatch, Long> {
 
 	long countBySessionIdAndStatusAndWinnerSide(Long sessionId, MatchStatus status, TeamSide winnerSide);
 
-	long countByStatus(MatchStatus status);
-
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select match from ScrimMatch match where match.id = :id")
 	Optional<ScrimMatch> findByIdForUpdate(@Param("id") Long id);

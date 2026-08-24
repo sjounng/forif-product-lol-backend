@@ -42,4 +42,14 @@ public interface MatchParticipantRepository extends JpaRepository<MatchParticipa
 			""")
 	List<ChampionLaneAnalyticsProjection> aggregateChampionAnalyticsByMatchStatus(
 			@Param("status") MatchStatus status);
+
+	@Query("""
+			select count(distinct participant.matchId)
+			from MatchParticipant participant
+			where participant.championId is not null
+			  and participant.matchId in (
+			      select match.id from ScrimMatch match where match.status = :status
+			  )
+			""")
+	long countMatchesWithChampionByMatchStatus(@Param("status") MatchStatus status);
 }

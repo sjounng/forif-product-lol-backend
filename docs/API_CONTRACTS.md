@@ -17,10 +17,10 @@
 ## Contract: champion-analytics-v1
 
 - `GET /api/champions/analytics` is public and returns the same aggregate to every viewer.
-- `totalMatches` counts every match whose status is `COMPLETED`, regardless of room membership or owner.
+- `totalMatches` counts `COMPLETED` matches that have at least one participant with a recorded champion, regardless of room membership or owner.
 - `rows` are grouped by champion and lane and contain `picks`, `wins`, `kdaSum`, and `kdaSamples`.
 - The response contains no room, user, player, or guest identifiers.
-- Alternate-mode Data Dragon records whose Riot ID starts with `Jade_` are excluded.
+- The aggregate is cached for five minutes in Redis and locally, so newly completed matches can take up to five minutes to appear.
 
 ## Contract: group-v1
 
