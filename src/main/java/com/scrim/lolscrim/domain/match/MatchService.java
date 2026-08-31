@@ -43,7 +43,6 @@ import com.scrim.lolscrim.domain.match.dto.MatchScoreResponse;
 import com.scrim.lolscrim.domain.match.dto.MatchStartRequestResponse;
 import com.scrim.lolscrim.domain.match.dto.ProposeMatchResultRequest;
 import com.scrim.lolscrim.domain.session.MatchFormat;
-import com.scrim.lolscrim.domain.player.AssignedFrom;
 import com.scrim.lolscrim.domain.player.Lane;
 import com.scrim.lolscrim.domain.player.Player;
 import com.scrim.lolscrim.domain.player.PlayerRepository;
@@ -201,8 +200,7 @@ public class MatchService {
 
 	@Transactional
 	public MatchResponse startLive(Long userId, Long matchId) {
-		ScrimMatch snapshot = requireMatch(matchId);
-		ScrimSession session = requireSessionForUpdate(snapshot.getSessionId());
+		ScrimSession session = requireSessionForUpdate(requireMatchSessionId(matchId));
 		requireSessionAccess(session, userId);
 		requireCaptain(session.getId(), userId);
 		ScrimMatch match = requireMatchForUpdate(matchId);
@@ -223,8 +221,7 @@ public class MatchService {
 			Long userId,
 			Long matchId,
 			ProposeMatchResultRequest request) {
-		ScrimMatch snapshot = requireMatch(matchId);
-		ScrimSession session = requireSessionForUpdate(snapshot.getSessionId());
+		ScrimSession session = requireSessionForUpdate(requireMatchSessionId(matchId));
 		requireSessionAccess(session, userId);
 		requireCaptain(session.getId(), userId);
 		ScrimMatch match = requireMatchForUpdate(matchId);
@@ -243,8 +240,7 @@ public class MatchService {
 
 	@Transactional
 	public MatchResponse acceptResult(Long userId, Long matchId) {
-		ScrimMatch snapshot = requireMatch(matchId);
-		ScrimSession session = requireSessionForUpdate(snapshot.getSessionId());
+		ScrimSession session = requireSessionForUpdate(requireMatchSessionId(matchId));
 		requireSessionAccess(session, userId);
 		requireCaptain(session.getId(), userId);
 		ScrimMatch match = requireMatchForUpdate(matchId);
@@ -270,8 +266,7 @@ public class MatchService {
 
 	@Transactional
 	public MatchResponse rejectResult(Long userId, Long matchId) {
-		ScrimMatch snapshot = requireMatch(matchId);
-		ScrimSession session = requireSessionForUpdate(snapshot.getSessionId());
+		ScrimSession session = requireSessionForUpdate(requireMatchSessionId(matchId));
 		requireSessionAccess(session, userId);
 		requireCaptain(session.getId(), userId);
 		ScrimMatch match = requireMatchForUpdate(matchId);
@@ -647,8 +642,16 @@ public class MatchService {
 						"매치 시작 요청을 찾을 수 없습니다."));
 	}
 
-	private ScrimMatch requireMatch(Long matchId) {
-		return matchRepository.findById(matchId)
+	/**
+	 * 세션 락을 잡는 데 필요한 sessionId 만 읽는다.
+	 *
+	 * <p>여기서 매치를 <b>엔티티로</b> 읽으면 영속성 컨텍스트에 올라가고, 뒤따르는
+	 * {@code requireMatchForUpdate} 가 그 stale 인스턴스를 그대로 돌려줘(락만 획득)
+	 * 다른 트랜잭션이 커밋한 status/rating_applied 를 못 본다. 결과 확정이 동시에 들어오면
+	 * 그 틈으로 점수가 두 번 반영된다.
+	 */
+	private Long requireMatchSessionId(Long matchId) {
+		return matchRepository.findSessionIdById(matchId)
 				.orElseThrow(() -> new ApiException(MATCH_NOT_FOUND, "매치를 찾을 수 없습니다."));
 	}
 

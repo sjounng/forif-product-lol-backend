@@ -1,4 +1,6 @@
-package com.scrim.lolscrim.domain.player;
+package com.scrim.lolscrim.domain.match;
+
+import com.scrim.lolscrim.domain.player.Lane;
 
 import java.math.BigDecimal;
 

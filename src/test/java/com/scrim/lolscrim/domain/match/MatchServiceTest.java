@@ -191,7 +191,7 @@ class MatchServiceTest {
 		stubSessionForUpdate(session, 2L);
 		ScrimMatch match = liveMatch(2);
 		match.proposeResult(1L, TeamSide.BLUE, null, NOW.minusMinutes(1));
-		when(matchRepository.findById(50L)).thenReturn(Optional.of(match));
+		when(matchRepository.findSessionIdById(50L)).thenReturn(Optional.of(7L));
 		when(matchRepository.findByIdForUpdate(50L)).thenReturn(Optional.of(match));
 		ScrimMatch previous = ScrimMatch.createDrafting(7L, 9L, 1, NOW.minusHours(2));
 		ReflectionTestUtils.setField(previous, "id", 49L);
@@ -202,7 +202,7 @@ class MatchServiceTest {
 		when(matchRepository.findAllBySessionIdOrderByGameNoAsc(7L)).thenReturn(List.of(previous, match));
 		Draft draft = draft(50L);
 		when(draftRepository.findByMatchId(50L)).thenReturn(Optional.of(draft));
-		MatchParticipant blue = MatchParticipant.from(50L, 9L, roster().getFirst());
+		MatchParticipant blue = MatchParticipant.from(50L, 9L, roster().getFirst(), roster().getFirst().getSide(), AssignedFrom.PRIMARY);
 		when(participantRepository.findAllByMatchId(50L)).thenReturn(List.of(blue));
 
 		MatchResponse response = service.acceptResult(2L, 50L);
@@ -212,6 +212,9 @@ class MatchServiceTest {
 		assertThat(session.getStatus()).isEqualTo(SessionStatus.FINISHED);
 		assertThat(session.getGameCount()).isEqualTo((byte) 2);
 		assertThat(blue.getWin()).isTrue();
+		// 이 PR 의 핵심 연결부. 없으면 acceptResult 에서 점수 반영이 통째로 빠져도
+		// 나머지 단언이 전부 통과해 아무도 눈치채지 못한다.
+		verify(ratingService).apply(match, session.isRatingEnabled(), NOW);
 	}
 
 	@Test
@@ -221,7 +224,7 @@ class MatchServiceTest {
 		stubSessionForUpdate(session, 2L);
 		ScrimMatch match = liveMatch(1);
 		match.proposeResult(1L, TeamSide.RED, null, NOW.minusMinutes(1));
-		when(matchRepository.findById(50L)).thenReturn(Optional.of(match));
+		when(matchRepository.findSessionIdById(50L)).thenReturn(Optional.of(7L));
 		when(matchRepository.findByIdForUpdate(50L)).thenReturn(Optional.of(match));
 		when(draftRepository.findByMatchId(50L)).thenReturn(Optional.of(draft(50L)));
 
@@ -237,11 +240,11 @@ class MatchServiceTest {
 		session.startMatchFlow(NOW.minusHours(1));
 		stubSessionForUpdate(session, 1L);
 		ScrimMatch match = liveMatch(1);
-		when(matchRepository.findById(50L)).thenReturn(Optional.of(match));
+		when(matchRepository.findSessionIdById(50L)).thenReturn(Optional.of(7L));
 		when(matchRepository.findByIdForUpdate(50L)).thenReturn(Optional.of(match));
 		when(draftRepository.findByMatchId(50L)).thenReturn(Optional.of(draft(50L)));
 		List<MatchParticipant> participants = roster().stream()
-				.map(member -> MatchParticipant.from(50L, 9L, member))
+				.map(member -> MatchParticipant.from(50L, 9L, member, member.getSide(), AssignedFrom.PRIMARY))
 				.toList();
 		when(participantRepository.findAllByMatchId(50L)).thenReturn(participants);
 		List<MatchParticipantStatsRequest> stats = participants.stream()

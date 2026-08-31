@@ -29,10 +29,11 @@ public final class GlickoCalculator {
 	}
 
 	/**
-	 * @param rawDelta 오프롤 감쇠(§4.3) 적용 <b>전</b> 점수 변화량. 감쇠 계수는 호출자가 곱한다.
-	 * @param newRd    갱신된 RD. 승패와 무관하다 (기존 RD 와 d² 만으로 정해진다).
+	 * @param rawDelta      오프롤 감쇠(§4.3) 적용 <b>전</b> 점수 변화량. 감쇠 계수는 호출자가 곱한다.
+	 * @param newRd         갱신된 RD. 승패와 무관하다 (기존 RD 와 d² 만으로 정해진다).
+	 * @param expectedScore 기대 승률 E. 감사 기록(§4.2-B)에 남겨 "왜 이만큼 움직였나"를 설명한다.
 	 */
-	public record Outcome(double rawDelta, int newRd) {
+	public record Outcome(double rawDelta, int newRd, double expectedScore) {
 	}
 
 	/**
@@ -56,8 +57,11 @@ public final class GlickoCalculator {
 
 		double score = win ? 1.0 : 0.0;
 		double rawDelta = (Q / inverseVariance) * g * (score - e);
-		int newRd = (int) Math.round(Math.sqrt(1.0 / inverseVariance));
-		return new Outcome(rawDelta, Math.max(MIN_RD, newRd));
+		// floor 여야 한다. round 로 접으면 한 판당 감소폭이 0.5 미만이 되는 지점(상대 RD 200 기준
+		// RD 55 근처)에서 감소가 통째로 지워져 RD 가 거기서 영구히 멈춘다 — 시드 RD 최소가 200이라
+		// MIN_RD 는 도달조차 못 하는 죽은 상수가 된다. floor 는 매 판 최소 1씩 내려가므로 하한에 닿는다.
+		int newRd = (int) Math.floor(Math.sqrt(1.0 / inverseVariance));
+		return new Outcome(rawDelta, Math.max(MIN_RD, newRd), e);
 	}
 
 	/** g(RD) — 상대의 불확실성이 클수록 결과를 덜 신뢰한다. */

@@ -2,7 +2,6 @@ package com.scrim.lolscrim.domain.match;
 
 import java.math.BigDecimal;
 
-import com.scrim.lolscrim.domain.player.AssignedFrom;
 import com.scrim.lolscrim.domain.player.Lane;
 import com.scrim.lolscrim.domain.session.SessionTeamMember;
 import com.scrim.lolscrim.domain.session.TeamSide;
@@ -68,21 +67,21 @@ public class MatchParticipant {
 	@Column(columnDefinition = "SMALLINT UNSIGNED")
 	private Integer assists;
 
-	public static MatchParticipant from(
-			Long matchId,
-			Long roomId,
-			SessionTeamMember member) {
-		return from(matchId, roomId, member, member.getSide());
-	}
+	/** 점수 반영 전후 스냅샷 (§4.2-B). 결과 무효화 시 되돌릴 근거이자 "왜 이만큼 움직였나"의 답. */
+	@Column(name = "rating_before")
+	private Integer ratingBefore;
 
-	public static MatchParticipant from(
-			Long matchId,
-			Long roomId,
-			SessionTeamMember member,
-			TeamSide matchSide) {
-		return from(matchId, roomId, member, matchSide, AssignedFrom.PRIMARY);
-	}
+	@Column(name = "rating_after")
+	private Integer ratingAfter;
 
+	@Column(name = "rating_delta")
+	private Integer ratingDelta;
+
+	/**
+	 * 배정 라인·오프롤 계수는 매치 생성 시점에 확정해야 하므로 반드시 명시해서 만든다.
+	 * 기본값을 주는 짧은 오버로드를 두면 새 매치 생성 경로가 그걸 잡아도 컴파일 에러 없이
+	 * 전원 PRIMARY(1.000)로 기록되고, DB DEFAULT 'PRIMARY' 와 겹쳐 어느 층에서도 안 잡힌다.
+	 */
 	public static MatchParticipant from(
 			Long matchId,
 			Long roomId,
@@ -102,6 +101,13 @@ public class MatchParticipant {
 
 	public void recordResult(TeamSide winnerSide) {
 		win = side == winnerSide;
+	}
+
+	/** 점수 반영 전후를 이 판의 참가 기록에 새긴다 (§4.2-B 감사 기록). */
+	public void recordRatingChange(int ratingBefore, int ratingAfter) {
+		this.ratingBefore = ratingBefore;
+		this.ratingAfter = ratingAfter;
+		this.ratingDelta = ratingAfter - ratingBefore;
 	}
 
 	public void assignChampion(Integer championId) {

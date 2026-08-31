@@ -1,6 +1,7 @@
 package com.scrim.lolscrim.domain.match;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -10,16 +11,19 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.scrim.lolscrim.domain.player.AssignedFrom;
 import com.scrim.lolscrim.domain.player.Lane;
 import com.scrim.lolscrim.domain.player.PlayerLaneRating;
 import com.scrim.lolscrim.domain.player.PlayerLaneRatingRepository;
 import com.scrim.lolscrim.domain.player.PlayerRating;
 import com.scrim.lolscrim.domain.player.PlayerRatingRepository;
+import com.scrim.lolscrim.domain.player.RatingHistory;
+import com.scrim.lolscrim.domain.player.RatingHistoryRepository;
+import com.scrim.lolscrim.domain.player.RatingScope;
 import com.scrim.lolscrim.domain.player.SeedSource;
 import com.scrim.lolscrim.domain.session.SessionTeamMember;
 import com.scrim.lolscrim.domain.session.TeamSide;
@@ -38,12 +42,15 @@ class MatchRatingServiceTest {
 	private PlayerRatingRepository ratingRepository;
 	@Mock
 	private PlayerLaneRatingRepository laneRatingRepository;
+	@Mock
+	private RatingHistoryRepository historyRepository;
 
 	private MatchRatingService service;
 
 	@BeforeEach
 	void setUp() {
-		service = new MatchRatingService(participantRepository, ratingRepository, laneRatingRepository);
+		service = new MatchRatingService(
+				participantRepository, ratingRepository, laneRatingRepository, historyRepository);
 	}
 
 	@Test
@@ -115,6 +122,80 @@ class MatchRatingServiceTest {
 		assertThat(locked.getGamesPlayed()).isZero();
 		// 같은 팀의 잠기지 않은 선수는 정상 갱신된다
 		assertThat(ratings.get(1).getRating()).isGreaterThan(1500);
+	}
+
+	@Test
+	void lockedPlayerStillCountsTowardOpposingTeamAverage() {
+		// §4.2-B: 잠긴 선수는 갱신만 빠지고 상대팀 평균 계산에는 들어간다.
+		// 전원 동점으로 두면 그 선수가 평균에서 빠져도 평균이 그대로라 규칙을 판별하지 못한다 —
+		// 잠긴 선수만 점수를 크게 다르게 줘서 상대팀 델타가 그 값에 반응하는지 본다.
+		List<PlayerRating> withLocked = evenRatings();
+		PlayerRating locked = withLocked.getFirst();
+		ReflectionTestUtils.setField(locked, "locked", true);
+		ReflectionTestUtils.setField(locked, "rating", 3000);
+		stub(participants(), withLocked, List.of());
+		service.apply(completedMatch(TeamSide.BLUE), true, NOW);
+		int redDeltaWithStrongLockedOpponent = withLocked.get(5).getRating() - 1500;
+
+		// 같은 배치인데 잠긴 선수가 평범한 점수인 경우
+		List<PlayerRating> baseline = evenRatings();
+		PlayerRating lockedBaseline = baseline.getFirst();
+		ReflectionTestUtils.setField(lockedBaseline, "locked", true);
+		stub(participants(), baseline, List.of());
+		service.apply(completedMatch(TeamSide.BLUE), true, NOW);
+		int redDeltaWithAverageLockedOpponent = baseline.get(5).getRating() - 1500;
+
+		// 상대에 강한 선수가 있었으니 패배 손실이 더 작아야 한다 (둘 다 음수)
+		assertThat(redDeltaWithStrongLockedOpponent).isGreaterThan(redDeltaWithAverageLockedOpponent);
+	}
+
+	@Test
+	void recordsAuditTrailForOverallAndLane() {
+		// §4.2-B — 점수는 파괴적으로 갱신되므로 되돌릴 근거를 남겨야 한다
+		List<PlayerRating> ratings = evenRatings();
+		PlayerLaneRating played = PlayerLaneRating.seed(1L, Lane.TOP, ROOM_ID, 1500, 200, 5);
+		stub(participants(), ratings, List.of(played));
+
+		service.apply(completedMatch(TeamSide.BLUE), true, NOW);
+
+		@SuppressWarnings("unchecked")
+		ArgumentCaptor<List<RatingHistory>> captor = ArgumentCaptor.forClass(List.class);
+		verify(historyRepository).saveAll(captor.capture());
+		List<RatingHistory> histories = captor.getValue();
+
+		// 10명의 OVERALL + playerId 1 의 LANE 1건
+		assertThat(histories).hasSize(11);
+		RatingHistory overall = histories.stream()
+				.filter(history -> history.getScope() == RatingScope.OVERALL)
+				.filter(history -> history.getPlayerId().equals(1L))
+				.findFirst()
+				.orElseThrow();
+		assertThat(overall.getRatingBefore()).isEqualTo(1500);
+		assertThat(overall.getRatingAfter()).isGreaterThan(1500);
+		assertThat(overall.getDelta()).isEqualTo(overall.getRatingAfter() - 1500);
+		assertThat(overall.getMatchId()).isEqualTo(MATCH_ID);
+		assertThat(overall.getExpectedScore()).isNotNull();
+		assertThat(overall.getRdBefore()).isEqualTo((short) 200);
+
+		assertThat(histories).anySatisfy(history -> {
+			assertThat(history.getScope()).isEqualTo(RatingScope.LANE);
+			assertThat(history.getLane()).isEqualTo(Lane.TOP);
+		});
+	}
+
+	@Test
+	void writesRatingSnapshotOntoParticipant() {
+		List<MatchParticipant> participants = participants();
+		List<PlayerRating> ratings = evenRatings();
+		stub(participants, ratings, List.of());
+
+		service.apply(completedMatch(TeamSide.BLUE), true, NOW);
+
+		MatchParticipant winner = participants.getFirst();
+		assertThat(winner.getRatingBefore()).isEqualTo(1500);
+		assertThat(winner.getRatingAfter()).isGreaterThan(1500);
+		assertThat(winner.getRatingDelta())
+				.isEqualTo(winner.getRatingAfter() - winner.getRatingBefore());
 	}
 
 	@Test

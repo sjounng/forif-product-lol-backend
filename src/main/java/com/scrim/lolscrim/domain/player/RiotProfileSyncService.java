@@ -53,9 +53,16 @@ public class RiotProfileSyncService {
 						"Riot 계정을 찾을 수 없습니다."));
 		List<Lane> preferredLanes = preferredLanes(laneHistory.laneGames());
 		Map<Lane, Integer> lanePool = LaneProficiencyCalculator.recommend(laneHistory.laneGames());
-		account.applyLanePreferences(
-				preferredLanes.isEmpty() ? null : preferredLanes.get(0),
-				preferredLanes.size() < 2 ? null : preferredLanes.get(1));
+		// 분석 결과가 비면 기존 선호를 유지한다. 덮어쓰면 안 된다 —
+		// fetchRecentLaneHistory 는 429 를 만나도 예외 없이 빈/부분 분포를 돌려주도록 설계돼 있고
+		// (선수 1명당 21콜이라 배치 동기화는 개발 키 한도를 쉽게 넘는다), 이 값은 매치 생성 시점에
+		// assigned_from -> off_role_factor 로 확정되어 그 판의 점수 계산에 영구히 박힌다.
+		// 즉 레이트리밋 한 번이 멀쩡한 선수의 레이팅 델타를 영구히 잘못 만든다.
+		if (!preferredLanes.isEmpty()) {
+			account.applyLanePreferences(
+					preferredLanes.get(0),
+					preferredLanes.size() < 2 ? null : preferredLanes.get(1));
+		}
 
 		RiotRankSnapshot rank = rankRepository
 				.findFirstByRiotAccountIdAndQueueTypeOrderByCapturedAtDesc(
