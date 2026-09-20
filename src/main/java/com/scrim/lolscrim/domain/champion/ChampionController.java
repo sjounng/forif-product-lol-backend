@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.scrim.lolscrim.domain.champion.dto.ChampionResponse;
+import com.scrim.lolscrim.domain.champion.dto.ChampionAnalyticsResponse;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,5 +21,10 @@ public class ChampionController {
 	@GetMapping
 	public List<ChampionResponse> getChampions() {
 		return championService.getActiveChampions();
+	}
+
+	@GetMapping("/analytics")
+	public ChampionAnalyticsResponse getGlobalAnalytics() {
+		return championService.getGlobalAnalytics();
 	}
 }
