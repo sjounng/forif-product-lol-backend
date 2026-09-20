@@ -2,7 +2,6 @@ package com.scrim.lolscrim.domain.match;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -102,8 +101,9 @@ class MatchParticipantRepositoryTest {
 		ReflectionTestUtils.setField(participant, "roomId", 1L);
 		ReflectionTestUtils.setField(participant, "side", side);
 		ReflectionTestUtils.setField(participant, "lane", lane);
-		ReflectionTestUtils.setField(participant, "assignedFrom", "PRIMARY");
-		ReflectionTestUtils.setField(participant, "offRoleFactor", BigDecimal.ONE);
+		// assignedFrom 이 String 에서 AssignedFrom enum 으로 바뀌었다 (오프롤 계수를 enum 이 들고 있다)
+		ReflectionTestUtils.setField(participant, "assignedFrom", AssignedFrom.PRIMARY);
+		ReflectionTestUtils.setField(participant, "offRoleFactor", AssignedFrom.PRIMARY.offRoleFactor());
 		if (championId != null) {
 			participant.assignChampion(championId);
 		}
