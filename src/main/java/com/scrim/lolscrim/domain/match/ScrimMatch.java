@@ -165,4 +165,10 @@ public class ScrimMatch {
 		endedAt = now;
 		updatedAt = now;
 	}
+
+	/** 점수 반영은 판당 정확히 한 번이어야 한다 — 재계산·중복 확정 시 이중 반영 방지. */
+	public void markRatingApplied(LocalDateTime now) {
+		ratingApplied = true;
+		updatedAt = now;
+	}
 }

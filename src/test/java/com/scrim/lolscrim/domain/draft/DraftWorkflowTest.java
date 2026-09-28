@@ -35,6 +35,7 @@ import com.scrim.lolscrim.domain.group.RoomMembership;
 import com.scrim.lolscrim.domain.match.Draft;
 import com.scrim.lolscrim.domain.match.DraftRepository;
 import com.scrim.lolscrim.domain.match.DraftStatus;
+import com.scrim.lolscrim.domain.match.AssignedFrom;
 import com.scrim.lolscrim.domain.match.MatchParticipant;
 import com.scrim.lolscrim.domain.match.MatchParticipantRepository;
 import com.scrim.lolscrim.domain.match.MatchStatus;
@@ -323,7 +324,7 @@ class DraftWorkflowTest {
 		ScrimMatch match = ScrimMatch.createDrafting(7L, 9L, 1, NOW.minusMinutes(10));
 		ReflectionTestUtils.setField(match, "id", 50L);
 		List<MatchParticipant> participants = roster.stream()
-				.map(member -> MatchParticipant.from(50L, 9L, member))
+				.map(member -> MatchParticipant.from(50L, 9L, member, member.getSide(), AssignedFrom.PRIMARY))
 				.toList();
 
 		when(draftRepository.findByIdForUpdate(60L)).thenReturn(Optional.of(draft));

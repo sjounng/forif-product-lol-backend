@@ -69,4 +69,19 @@ public class PlayerLaneRating {
 	public void updateProficiency(int selfProficiency) {
 		this.selfProficiency = (byte) selfProficiency;
 	}
+
+	/**
+	 * 그 판에서 <b>실제로 뛴 라인만</b> 갱신한다. DESIGN §4.2.
+	 * 정글 몇 판 뛴 게 서폿 점수를 오염시키지 않는다는 게 라인별 점수를 따로 두는 이유다.
+	 */
+	public void applyMatchResult(int newRating, int newRd, boolean win) {
+		rating = newRating;
+		rd = (short) newRd;
+		gamesPlayed++;
+		if (win) {
+			wins++;
+		} else {
+			losses++;
+		}
+	}
 }

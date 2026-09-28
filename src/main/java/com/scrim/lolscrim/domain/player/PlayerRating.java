@@ -74,4 +74,26 @@ public class PlayerRating {
 		return playerRating;
 	}
 
+	/**
+	 * 확정된 내전 한 판을 반영한다. DESIGN §4.2.
+	 *
+	 * 점수 계산 자체는 {@link GlickoCalculator} 가 하고, 여기서는 전적/연승만 같이 갱신한다.
+	 *
+	 * @param newRating 오프롤 감쇠(§4.3)까지 끝난 최종 rating
+	 */
+	public void applyMatchResult(int newRating, int newRd, boolean win, LocalDateTime playedAt) {
+		rating = newRating;
+		rd = (short) newRd;
+		peakRating = Math.max(peakRating, newRating);
+		gamesPlayed++;
+		if (win) {
+			wins++;
+			winStreak = (short) (winStreak >= 0 ? winStreak + 1 : 1);
+		} else {
+			losses++;
+			winStreak = (short) (winStreak <= 0 ? winStreak - 1 : -1);
+		}
+		lastPlayedAt = playedAt;
+	}
+
 }
